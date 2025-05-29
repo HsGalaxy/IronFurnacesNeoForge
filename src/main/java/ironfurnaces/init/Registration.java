@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 pizzaatime and XenoMustache
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ironfurnaces.init;
 
 import com.mojang.serialization.Codec;
@@ -277,7 +293,7 @@ public class Registration {
     public static final DeferredHolder<Item, ItemFurnaceCopy> ITEM_COPY = ITEMS.register("item_copy", () -> new ItemFurnaceCopy(new Item.Properties().stacksTo(1)));
     public static final DeferredHolder<Item, Item> RAINBOW_CORE = ITEMS.register("rainbow_core", () -> new Item(new Item.Properties()));
     public static final DeferredHolder<Item, Item> RAINBOW_PLATING = ITEMS.register("rainbow_plating", () -> new Item(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemRainbowCoal> RAINBOW_COAL = ITEMS.register("rainbow_coal", () -> new ItemRainbowCoal(new Item.Properties()));
+    public static final DeferredHolder<Item, ItemRainbowCoal> RAINBOW_COAL = ITEMS.register("rainbow_coal", () -> new ItemRainbowCoal(new Item.Properties().stacksTo(1)));
 
 
     public static final DeferredHolder<Block, BlockMillionFurnace> MILLION_FURNACE = BLOCKS.register(BlockMillionFurnace.MILLION_FURNACE, () -> new BlockMillionFurnace(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK))); // Assuming BlockMillionFurnace exists

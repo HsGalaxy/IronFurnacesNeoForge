@@ -1,10 +1,15 @@
 4.3.0
 +Changed software licensing to Apache License Version 2.0  https://www.apache.org/licenses/LICENSE-2.0
     From 4.3.0 onwards Apache License Version 2.0 will take effect,
-    all other previous versions of this software from 4.2.6 still fall under GNU General Public License v3.0
+    all other previous versions of this software from 4.2.6 and before still technically fall under GNU General Public License v3.0
 +Fixed Rainbow Coal stacking to 64, now 1
 +Changed colour of tooltip text of the cooktime rating on the furnaces
 +Fixed GUI background gradiet applying two times when viewing furnace GUI
++Fixed a Class Cast Exception happening sometimes with getDirectSignal
++Fixed Rainbow Coal not having durability
++Changed Fuel Input tooltip to Fuel Input/Eject
++Fixed Generator Furnaces deleting items if not ejected after consuming lava bucket or likewise fuel
++Fixed Generator Furnaces accepting more than 1 honey bottle or similar stackable craftingremainder fuels for smoking generation
 4.2.6
 +Fixed and cleaned up two functions in TileEntityInventory
 +Fixed quickMoveStack, shift clicking items in furnace sometimes not behaving correct, Credit to Xaunther for pointing this out

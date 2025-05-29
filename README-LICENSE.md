@@ -9,6 +9,15 @@ SPDX-License-Identifier: Apache-2.0
 
 The Git repository for Iron Furnaces is located at https://github.com/Qelifern/IronFurnacesNeoForge.
 
+## Contribution
+This project is open source, but contributions (including translations, code, or other content) must be coordinated with the maintainers before submission.
+
+By contributing to this project, you agree to grant the maintainers (pizzaatime and XenoMustache) the right to use your contributions under any license they choose, including relicensing the project in the future.
+
+If you want to contribute, please contact us first.
+
+You can reach me on Discord at #mollgan via direct message.
+
 ## NeoForge
 
 The homepage for NeoForge is at https://neoforged.net, with the Git

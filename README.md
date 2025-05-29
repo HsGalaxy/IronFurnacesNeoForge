@@ -16,8 +16,10 @@ For performance-related issues, contact me directly on Discord at #mollgan and c
 
 
 # Contribution
-While this project is open source, that does not mean that I or XenoMustache will actively review and merge pull requests to this project.
+This project is open source, but contributions (including translations, code, or other content) must be coordinated with the maintainers before submission.
 
-If you want to contribute to this project, like a translation for example, or otherwise, please contact us before making a pull request.
+By contributing to this project, you agree to grant the maintainers (pizzaatime and XenoMustache) the right to use your contributions under any license they choose, including relicensing the project in the future.
 
-You can contact me on Discord at #mollgan with a direct message.
+If you want to contribute, please contact us first.
+
+You can reach me on Discord at #mollgan via direct message.

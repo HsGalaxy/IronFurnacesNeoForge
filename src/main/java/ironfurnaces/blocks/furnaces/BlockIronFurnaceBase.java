@@ -399,25 +399,28 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
 
     @Override
     public int getDirectSignal(BlockState blockState, BlockGetter world, BlockPos pos, Direction direction) {
-        BlockIronFurnaceTileBase furnace = ((BlockIronFurnaceTileBase) world.getBlockEntity(pos));
-        if (furnace != null)
+        if (world.getBlockEntity(pos) instanceof BlockIronFurnaceTileBase)
         {
-            int mode = furnace.furnaceSettings.get(8);
-            if (mode == 0)
+            BlockIronFurnaceTileBase furnace = ((BlockIronFurnaceTileBase) world.getBlockEntity(pos));
+            if (furnace != null)
             {
-                return 0;
-            }
-            else if (mode == 1)
-            {
-                return 0;
-            }
-            else if (mode == 2)
-            {
-                return 0;
-            }
-            else
-            {
-                return calculateOutput(furnace.getLevel(), pos, blockState);
+                int mode = furnace.furnaceSettings.get(8);
+                if (mode == 0)
+                {
+                    return 0;
+                }
+                else if (mode == 1)
+                {
+                    return 0;
+                }
+                else if (mode == 2)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return calculateOutput(furnace.getLevel(), pos, blockState);
+                }
             }
         }
         return 0;

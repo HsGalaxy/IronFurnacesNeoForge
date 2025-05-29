@@ -45,6 +45,10 @@ public class SlotIronFurnaceInputGenerator extends Slot {
             }
             if (te.getItem(3).getItem() instanceof ItemAugmentSmoking)
             {
+                if (stack.hasCraftingRemainingItem())
+                {
+                    return te.getItem(6).isEmpty() && te.getSmokingBurn(stack) > 0;
+                }
                 return te.getSmokingBurn(stack) > 0;
             }
         }
@@ -52,7 +56,25 @@ public class SlotIronFurnaceInputGenerator extends Slot {
         {
             return false;
         }
+
         return BlockIronFurnaceTileBase.isItemFuel(stack, RecipeType.SMELTING);
+    }
+
+    @Override
+    public ItemStack safeInsert(ItemStack stack, int increment) {
+        if (stack.hasCraftingRemainingItem())
+        {
+            if (stack.getCount() > 1)
+            {
+                if (this.getItem().isEmpty())
+                {
+                    super.safeInsert(stack.copyWithCount(1), increment);
+                    return stack.copyWithCount(stack.getCount() - 1);
+                }
+
+            }
+        }
+        return super.safeInsert(stack, increment);
     }
 
     @Override

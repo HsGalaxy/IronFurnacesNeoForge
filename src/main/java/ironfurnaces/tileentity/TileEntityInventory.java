@@ -49,6 +49,7 @@ public abstract class TileEntityInventory extends BlockEntity implements ITileIn
     }
 
 
+
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         CompoundTag tag = new CompoundTag();

@@ -429,6 +429,26 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         return burn;
     }
 
+    private boolean isItemGeneratorFuel(ItemStack stack) {
+        int burn = 0;
+        if (getItem(AUGMENT_RED).getItem() instanceof ItemAugmentSmoking) {
+            burn = getSmokingBurn(stack);
+        } else if (getItem(AUGMENT_RED).getItem() instanceof ItemAugmentBlasting) {
+            if (!stack.isEmpty()) {
+                int energy = getRecipeGeneratorBlasting(stack).value().getEnergy();
+                burn = energy / 20;
+            }
+        } else {
+            burn = getBurnTime(stack, RecipeType.SMELTING);
+        }
+        if (getItem(AUGMENT_GREEN).getItem() instanceof ItemAugmentSpeed) {
+            burn /= 2;
+        } else if (getItem(AUGMENT_GREEN).getItem() instanceof ItemAugmentFuel) {
+            burn *= 2;
+        }
+        return burn > 0;
+    }
+
 
     public boolean isFactoryCooking() {
         for (int i = 0; i < factoryCookTime.length; i++) {
@@ -909,16 +929,20 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                 }
                 if (e.getEnergy() < e.getCapacity()) {
                     if (!e.getItem(GENERATOR_FUEL).isEmpty() && e.generatorBurn <= 0) {
-                        e.generatorBurn = e.getGeneratorBurn();
-                        e.generatorRecentRecipeRF = (int) e.generatorBurn;
-                        if (e.getItem(GENERATOR_FUEL).hasCraftingRemainingItem())
-                            e.setItem(GENERATOR_FUEL, e.getItem(GENERATOR_FUEL).getCraftingRemainingItem());
-                        else if (!e.getItem(GENERATOR_FUEL).isEmpty()) {
-                            e.getItem(GENERATOR_FUEL).shrink(1);
-                            if (e.getItem(GENERATOR_FUEL).isEmpty()) {
+                        if (e.getGeneratorBurn() > 0)
+                        {
+                            e.generatorBurn = e.getGeneratorBurn();
+                            e.generatorRecentRecipeRF = (int) e.generatorBurn;
+                            if (e.getItem(GENERATOR_FUEL).hasCraftingRemainingItem())
                                 e.setItem(GENERATOR_FUEL, e.getItem(GENERATOR_FUEL).getCraftingRemainingItem());
+                            else if (!e.getItem(GENERATOR_FUEL).isEmpty()) {
+                                e.getItem(GENERATOR_FUEL).shrink(1);
+                                if (e.getItem(GENERATOR_FUEL).isEmpty()) {
+                                    e.setItem(GENERATOR_FUEL, e.getItem(GENERATOR_FUEL).getCraftingRemainingItem());
+                                }
                             }
                         }
+
                         e.setChanged();
                     }
                     if (e.isGenerator()) {
@@ -1332,8 +1356,17 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                     {
                                         continue;
                                     }
-                                    if (isItemFuel(stack, recipeType) && getItem(GENERATOR_FUEL).isEmpty() || ItemStack.isSameItemSameComponents(getItem(GENERATOR_FUEL), stack)) {
-                                        insertItemInternal(GENERATOR_FUEL, other.extractItem(i, other.getStackInSlot(i).getMaxStackSize() - this.getItem(GENERATOR_FUEL).getCount(), false), false);
+                                    if (isItemGeneratorFuel(stack) && getItem(GENERATOR_FUEL).isEmpty() || ItemStack.isSameItemSameComponents(getItem(GENERATOR_FUEL), stack)) {
+                                        int count = other.getStackInSlot(i).getMaxStackSize() - this.getItem(GENERATOR_FUEL).getCount();
+                                        if (stack.hasCraftingRemainingItem())
+                                        {
+                                            if (!getItem(GENERATOR_FUEL).isEmpty())
+                                            {
+                                                continue;
+                                            }
+                                            count = 1;
+                                        }
+                                        insertItemInternal(GENERATOR_FUEL, other.extractItem(i, count, false), false);
                                     }
                                 }
                             }
@@ -1345,7 +1378,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                 if (this.getItem(GENERATOR_FUEL).isEmpty()) {
                                     continue;
                                 }
-                                if (!isItemFuel(getItem(GENERATOR_FUEL), recipeType)) {
+                                if (!isItemGeneratorFuel(getItem(GENERATOR_FUEL))) {
                                     for (int i = 0; i < other.getSlots(); i++) {
                                         ItemStack stack = extractItemInternal(GENERATOR_FUEL, this.getItem(GENERATOR_FUEL).getMaxStackSize() - other.getStackInSlot(i).getCount(), true);
                                         if (other.isItemValid(i, stack) && (other.getStackInSlot(i).isEmpty() || (ItemStack.isSameItemSameComponents(other.getStackInSlot(i), stack) && other.getStackInSlot(i).getCount() + stack.getCount() <= other.getSlotLimit(i)))) {
@@ -1432,7 +1465,6 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     public ItemStack insertItemInternal(int slot, @Nonnull ItemStack stack, boolean simulate) {
         if (stack.isEmpty())
             return ItemStack.EMPTY;
-
         if (!canPlaceItemThroughFace(slot, stack, null))
             return stack;
 
@@ -1463,6 +1495,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
 
         return reachedLimit ? stack.copyWithCount(stack.getCount() - limit) : ItemStack.EMPTY;
     }
+
 
     @Nonnull
     private ItemStack extractItemInternal(int slot, int amount, boolean simulate) {

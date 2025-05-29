@@ -17,6 +17,7 @@
 package ironfurnaces.items;
 
 import ironfurnaces.Config;
+import ironfurnaces.IronFurnaces;
 import ironfurnaces.init.Registration;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -41,7 +42,7 @@ public class ItemFurnace extends BlockItem {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext pContext, List<Component> tooltip, TooltipFlag pTooltipFlag) {
 
-        tooltip.add(Component.literal("Cooktime (" + getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE));
+        tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").withStyle(ChatFormatting.BLUE).append(Component.literal(" (" + getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE)));
 
     }
 
@@ -50,6 +51,10 @@ public class ItemFurnace extends BlockItem {
     protected static int getCooktime(ItemStack stack)
     {
         Item item = stack.getItem();
+        if (item == Registration.MILLION_FURNACE_ITEM.get())
+        {
+            return Config.millionFurnaceSpeed.get();
+        }
         if (item == Registration.ALLTHEMODIUM_FURNACE_ITEM.get())
         {
             return Config.allthemodiumFurnaceSpeed.get();

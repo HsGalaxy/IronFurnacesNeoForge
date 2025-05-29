@@ -498,6 +498,8 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         return j != 0 && i != 0 ? i * pixels / j : 0;
     }
 
+
+
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -514,9 +516,23 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
                     if (te.getItem(3).getItem() instanceof ItemAugmentSmoking)
                     {
                         if (te.getSmokingBurn(itemstack1) > 0) {
-                            if (!this.moveItemStackTo(itemstack1, 6, 7, false)) {
-                                return ItemStack.EMPTY;
+                            if (itemstack1.hasCraftingRemainingItem())
+                            {
+                                if (te.getItem(6).isEmpty())
+                                {
+                                    if (!this.specialMoveItemStackTo(itemstack1, 6, 7, false)) {
+                                        return ItemStack.EMPTY;
+                                    }
+                                }
+
                             }
+                            else
+                            {
+                                if (!this.moveItemStackTo(itemstack1, 6, 7, false)) {
+                                    return ItemStack.EMPTY;
+                                }
+                            }
+
                         }
                     }
                     else if (te.getItem(3).getItem() instanceof ItemAugmentBlasting)
@@ -669,6 +685,89 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         return itemstack;
     }
 
+
+    private boolean specialMoveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
+        boolean flag = false;
+        int i = startIndex;
+        if (reverseDirection) {
+            i = endIndex - 1;
+        }
+
+        Slot slot1;
+        ItemStack itemstack;
+        int l;
+        if (stack.isStackable()) {
+            while(!stack.isEmpty()) {
+                if (reverseDirection) {
+                    if (i < startIndex) {
+                        break;
+                    }
+                } else if (i >= endIndex) {
+                    break;
+                }
+
+                slot1 = (Slot)this.slots.get(i);
+                itemstack = slot1.getItem();
+                if (!itemstack.isEmpty() && ItemStack.isSameItemSameComponents(stack, itemstack)) {
+                    l = itemstack.getCount() + stack.getCount();
+                    int k = slot1.getMaxStackSize(itemstack);
+                    if (l <= k) {
+                        stack.setCount(0);
+                        itemstack.setCount(l);
+                        slot1.setChanged();
+                        flag = true;
+                    } else if (itemstack.getCount() < k) {
+                        stack.shrink(k - itemstack.getCount());
+                        itemstack.setCount(k);
+                        slot1.setChanged();
+                        flag = true;
+                    }
+                }
+
+                if (reverseDirection) {
+                    --i;
+                } else {
+                    ++i;
+                }
+            }
+        }
+
+        if (!stack.isEmpty()) {
+            if (reverseDirection) {
+                i = endIndex - 1;
+            } else {
+                i = startIndex;
+            }
+
+            while(true) {
+                if (reverseDirection) {
+                    if (i < startIndex) {
+                        break;
+                    }
+                } else if (i >= endIndex) {
+                    break;
+                }
+
+                slot1 = (Slot)this.slots.get(i);
+                itemstack = slot1.getItem();
+                if (itemstack.isEmpty() && slot1.mayPlace(stack)) {
+                    l = slot1.getMaxStackSize(stack);
+                    slot1.setByPlayer(stack.split(Math.min(1, l)));
+                    slot1.setChanged();
+                    flag = true;
+                    break;
+                }
+
+                if (reverseDirection) {
+                    --i;
+                } else {
+                    ++i;
+                }
+            }
+        }
+
+        return flag;
+    }
 
 
     private int addSlotRange(IItemHandler handler, int index, int x, int y, int amount, int dx) {

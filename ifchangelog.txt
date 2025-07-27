@@ -1,3 +1,5 @@
+4.3.1
++Fixed generating furnaces with blasing augment crashing due to null pointer
 4.3.0
 +Changed software licensing to Apache License Version 2.0  https://www.apache.org/licenses/LICENSE-2.0
     From 4.3.0 onwards Apache License Version 2.0 will take effect,

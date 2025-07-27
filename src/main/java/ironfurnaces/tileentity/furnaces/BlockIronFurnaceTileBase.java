@@ -435,8 +435,12 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             burn = getSmokingBurn(stack);
         } else if (getItem(AUGMENT_RED).getItem() instanceof ItemAugmentBlasting) {
             if (!stack.isEmpty()) {
-                int energy = getRecipeGeneratorBlasting(stack).value().getEnergy();
-                burn = energy / 20;
+                RecipeHolder<? extends GeneratorRecipe> recipe = getRecipeGeneratorBlasting(stack);
+                if (recipe != null)
+                {
+                    int energy = recipe.value().getEnergy();
+                    burn = energy / 20;
+                }
             }
         } else {
             burn = getBurnTime(stack, RecipeType.SMELTING);

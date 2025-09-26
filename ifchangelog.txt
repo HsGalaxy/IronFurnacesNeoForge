@@ -1,3 +1,6 @@
+4.3.2
++Fixed factory furnaces not doing an autoIO directly after smelting
++Fixed a couple recipes not checking conditions properly
 4.3.1
 +Fixed generating furnaces with blasing augment crashing due to null pointer
 4.3.0

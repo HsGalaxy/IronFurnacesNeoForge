@@ -30,6 +30,10 @@ repositories {
         name = "ModMaven"
         url = "https://modmaven.dev"
     }
+
+    maven {
+        url "https://cursemaven.com"
+    }
 }
 
 base {
@@ -129,6 +133,9 @@ dependencies {
     compileOnly("mezz.jei:jei-${mc_version}-neoforge-api:${jei_version}")
     // at runtime, use the full JEI jar for NeoForge
     runtimeOnly("mezz.jei:jei-${mc_version}-neoforge:${jei_version}")
+
+
+    //implementation "curse.maven:projectmmo-353935:6696480"
 
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar

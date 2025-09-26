@@ -16,7 +16,7 @@
   "result": {
     "id": "ironfurnaces:copper_furnace"
   },
-  "conditions": [
+  "neoforge:conditions": [
     {
       "value": {
         "type": "neoforge:tag_empty",

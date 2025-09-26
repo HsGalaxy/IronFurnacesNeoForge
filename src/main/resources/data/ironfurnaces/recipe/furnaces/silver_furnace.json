@@ -19,7 +19,7 @@
   "result": {
     "id": "ironfurnaces:silver_furnace"
   },
-  "conditions": [
+  "neoforge:conditions": [
     {
       "value": {
         "type": "neoforge:tag_empty",

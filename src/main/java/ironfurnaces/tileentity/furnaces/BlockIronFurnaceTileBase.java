@@ -879,6 +879,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                         e.split(true, start, size);
                                     }
                                     e.factorySmelt(irecipe, slot);
+                                    e.autoFactoryIO();
                                     e.setChanged();
                                 }
                             }

@@ -43,7 +43,9 @@ import static mezz.jei.api.recipe.RecipeIngredientRole.INPUT;
 public class RecipeCategoryGeneratorRegular implements IRecipeCategory<SimpleGeneratorRecipe> {
 
     public static final Identifier UID = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "category_generator_regular");
+    private static final Identifier GUI = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "textures/gui/jei.png");
     public IGuiHelper guiHelper;
+    protected final IDrawableStatic staticGUI;
     protected final IDrawableStatic staticFlame;
     protected final IDrawableAnimated animatedFlame;
     protected final IDrawableStatic staticEnergy;
@@ -51,10 +53,12 @@ public class RecipeCategoryGeneratorRegular implements IRecipeCategory<SimpleGen
 
     public RecipeCategoryGeneratorRegular(IGuiHelper guiHelper) {
         this.guiHelper = guiHelper;
-        staticFlame = guiHelper.createDrawable(Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "textures/gui/jei.png"), 68, 0, 14, 14);
+        staticGUI = guiHelper.createDrawable(GUI, 0, 0, 68, 42);
+
+        staticFlame = guiHelper.createDrawable(GUI, 68, 0, 14, 14);
         animatedFlame = guiHelper.createAnimatedDrawable(staticFlame, 300, IDrawableAnimated.StartDirection.TOP, true);
 
-        staticEnergy = guiHelper.createDrawable(Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "textures/gui/jei.png"), 82, 0, 14, 42);
+        staticEnergy = guiHelper.createDrawable(GUI, 82, 0, 14, 42);
         animatedEnergy = guiHelper.createAnimatedDrawable(staticEnergy, 300, IDrawableAnimated.StartDirection.BOTTOM, false);
 
     }
@@ -92,8 +96,10 @@ public class RecipeCategoryGeneratorRegular implements IRecipeCategory<SimpleGen
 
     @Override
     public void draw(SimpleGeneratorRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphicsExtractor stack, double mouseX, double mouseY) {
+        staticGUI.draw(stack);
         animatedFlame.draw(stack, 1, 1);
         animatedEnergy.draw(stack, 54, 0);
+
     }
 
     @Override

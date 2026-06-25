@@ -20,6 +20,7 @@ import ironfurnaces.init.Registration;
 import ironfurnaces.tileentity.BlockWirelessEnergyHeaterTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
@@ -93,8 +94,9 @@ public class BlockWirelessEnergyHeater extends Block implements EntityBlock {
         if (entity != null) {
             if (world.getBlockEntity(pos) != null) {
                 BlockWirelessEnergyHeaterTile te = (BlockWirelessEnergyHeaterTile) world.getBlockEntity(pos);
-                if (stack.get(DataComponents.CUSTOM_NAME) != null) {
-                    te.setCustomName(stack.get(DataComponents.CUSTOM_NAME));
+                Component s = stack.get(DataComponents.CUSTOM_NAME);
+                if (s != null) {
+                    te.setCustomName(s);
                 }
                 int energy = stack.getOrDefault(ironfurnaces.init.Registration.ENERGY.get(), 0);
                 te.setEnergy(energy);

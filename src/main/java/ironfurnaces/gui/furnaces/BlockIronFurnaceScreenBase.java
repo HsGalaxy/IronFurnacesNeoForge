@@ -88,10 +88,15 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
     private int timer;
     private Random rand = new Random();
 
+    int titleX;
+    int titleY;
+
     public BlockIronFurnaceScreenBase(T t, Inventory inv, Component name) {
         super(t, inv, name);
         playerInv = inv;
         this.name = name;
+        this.titleX = 49; //this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2
+        this.titleY = 6;
     }
 
 
@@ -161,17 +166,28 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
             }
         }
 
-        if (this.getMenu().getIsFactory())
-            graphics.text(font, name, this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2, -10, 16777215, false);
+        if (this.getMenu().isRainbowFurnace())
+        {
+            graphics.text(font, name, this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2, -10, -1, false);
+        }
         else
-            graphics.text(font, name, this.getMenu().getIsFurnace() ? 7 + this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2 : this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2, 6, 4210752, false);
+        {
+            if (this.getMenu().getIsFactory()) {
+                graphics.text(font, name, this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2, -10, -1, false);
+            }
+            else {
+                graphics.text(font, name, this.getMenu().getIsFurnace() ? 7 + this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2 : this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2, 6, -12566464, false);
+            }
+        }
 
-        graphics.text(font, this.playerInv.getDisplayName(), 7, this.getImageHeight() - 93, 4210752, false);
+
+
+        graphics.text(font, this.playerInventoryTitle, 8, imageHeight - 93, -12566464, false);
 
         if (showInventoryButtons() && this.getMenu().getRedstoneMode() == 4) {
             int comSub = this.getMenu().getComSub();
             int i = comSub > 9 ? 28 : 31;
-            graphics.text(font, Component.literal("" + comSub), i - 42, 90, 4210752, false);
+            graphics.text(font, Component.literal("" + comSub), i - 42, 90, -12566464, false);
         }
 
 

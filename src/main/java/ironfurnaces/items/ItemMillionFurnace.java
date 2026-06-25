@@ -50,7 +50,7 @@ public class ItemMillionFurnace extends BlockItem {
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext pContext, TooltipDisplay tooltipDisplay, Consumer<Component> components, TooltipFlag pTooltipFlag) {
-        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").append(Component.literal(" (" + ItemFurnace.getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE)));
+        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").withStyle(ChatFormatting.BLUE).append(Component.literal(" (" + Config.millionFurnaceSpeed.get() + ")").withStyle(ChatFormatting.BLUE)));
 
         timer++;
         if (timer % 20 == 0) {

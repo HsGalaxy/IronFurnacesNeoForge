@@ -24,6 +24,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -34,11 +35,15 @@ public abstract class BlockWirelessEnergyHeaterScreenBase<T extends BlockWireles
     public Identifier GUI = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "textures/gui/heater.png");
     Inventory playerInv;
     Component name;
+    int titleX;
+    int titleY;
 
     public BlockWirelessEnergyHeaterScreenBase(T t, Inventory inv, Component name) {
         super(t, inv, name);
         playerInv = inv;
         this.name = name;
+        this.titleX = 49; //this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2
+        this.titleY = 6;
     }
 
     @Override
@@ -47,11 +52,11 @@ public abstract class BlockWirelessEnergyHeaterScreenBase<T extends BlockWireles
     }
 
     @Override
-    public void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 
 
-        graphics.text(font, this.playerInv.getDisplayName(), 7, this.getImageHeight() - 93, 4210752, false);
-        graphics.text(font, name, this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2, 6, 4210752, false);
+        graphics.text(font, this.playerInventoryTitle, 8, imageHeight - 94, -12566464, false);
+        graphics.text(font, name, titleX, titleY, -12566464, false);
 
         int actualMouseX = mouseX - ((this.width - this.getImageWidth()) / 2);
         int actualMouseY = mouseY - ((this.height - this.getImageHeight()) / 2);

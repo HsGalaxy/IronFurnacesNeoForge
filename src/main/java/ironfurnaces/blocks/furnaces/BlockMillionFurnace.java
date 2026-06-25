@@ -21,9 +21,14 @@ import ironfurnaces.tileentity.furnaces.BlockMillionFurnaceTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -33,6 +38,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 import javax.annotation.Nullable;
+import java.util.function.BiConsumer;
 
 public class BlockMillionFurnace extends BlockIronFurnaceBase {
 
@@ -41,10 +47,19 @@ public class BlockMillionFurnace extends BlockIronFurnaceBase {
 
 
     public BlockMillionFurnace(Properties properties) {
-        super(properties);
+        super(properties.explosionResistance(0.0F));
     }
     public BlockEntity newBlockEntity(BlockPos p_153277_, BlockState p_153278_) {
         return new BlockMillionFurnaceTile(p_153277_, p_153278_);
+    }
+
+    @Override
+    protected void onExplosionHit(BlockState state, ServerLevel level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> onHit) {
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        level.invalidateCapabilities(pos);
+        level.removeBlockEntity(pos);
+        level.addFreshEntity(new ItemEntity(level, pos.getX(), pos.getY() + 2f, pos.getZ(), new ItemStack(ironfurnaces.init.Registration.RAINBOW_COAL.get())));
+
     }
 
     @Override

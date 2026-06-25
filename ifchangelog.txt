@@ -1,3 +1,10 @@
+4.4.1
++Readded Ender particles to Crystal Furnace
++Fixed missing localization to block heater
++Fixed GUIs not displaying titles
++Fixed wrong colour of item tooltip on "Cooktime" of Rainbow Furnace item
++Fixed JEI GUI not displaying background
++Fixed Rainbow Furnace not dropping Rainbow Coal consistently on explosion, now should be 100% rate
 4.4.0
 +Port to Minecraft 26.1.2
 +Added Astryxion to authors

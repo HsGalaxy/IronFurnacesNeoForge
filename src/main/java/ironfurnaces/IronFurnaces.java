@@ -23,7 +23,6 @@ import ironfurnaces.init.Registration;
 import ironfurnaces.network.Messages;
 import ironfurnaces.tileentity.BlockWirelessEnergyHeaterTile;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
-import ironfurnaces.util.EventHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -56,7 +55,6 @@ public class IronFurnaces
 
         Registration.init(modEventBus);
 
-        NeoForge.EVENT_BUS.addListener(EventHandler::explosionEvent);
 
 
 

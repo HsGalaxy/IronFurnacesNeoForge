@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class SlotIronFurnaceFuel extends Slot {
      */
     @Override
     public boolean mayPlace(ItemStack stack) {
-        return BlockIronFurnaceTileBase.isItemFuel(stack, RecipeType.SMELTING) || isBucket(stack);
+        return BlockIronFurnaceTileBase.isItemFuel(stack, RecipeType.SMELTING, this.te.getLevel()) || isBucket(stack);
     }
 
     @Override

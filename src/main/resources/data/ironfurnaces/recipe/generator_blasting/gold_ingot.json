@@ -1,7 +1,1 @@
-﻿{
-  "type": "ironfurnaces:generator_blasting",
-  "energy": 40000,
-  "ingredient": {
-    "item": "minecraft:gold_ingot"
-  }
-}
+{"type":"ironfurnaces:generator_blasting","energy":40000,"ingredient":"minecraft:gold_ingot"}

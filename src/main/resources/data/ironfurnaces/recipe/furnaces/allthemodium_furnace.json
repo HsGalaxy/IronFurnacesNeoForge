@@ -1,4 +1,13 @@
 {
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/allthemodium"
+      }
+    }
+  ],
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "B#B",
@@ -6,23 +15,11 @@
     "B#B"
   ],
   "key": {
-    "#": {
-      "tag": "c:ingots/allthemodium"
-    },
-    "X": {
-      "tag": "c:furnaces/netherite"
-    },
-    "B": {
-      "tag": "c:storage_blocks/allthemodium"
-    }
+    "#": "#c:ingots/allthemodium",
+    "X": "#c:furnaces/netherite",
+    "B": "#ironfurnaces:allthemodium_corners"
   },
   "result": {
     "id": "ironfurnaces:allthemodium_furnace"
-  },
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "allthemodium"
-    }
-  ]
+  }
 }

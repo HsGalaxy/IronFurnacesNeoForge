@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -58,9 +59,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,7 +101,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
             if (entity instanceof Player)
             {
                 Player player = (Player)entity;
-                player.getData(Registration.PLAYER_FURNACES_LIST.get()).furnacesList.add(pos);
+                player.getData(ironfurnaces.init.Registration.PLAYER_FURNACES_LIST.get()).furnacesList.add(pos);
                 if (te instanceof BlockMillionFurnaceTile)
                 {
                     te.owner = player.getUUID();
@@ -116,7 +114,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult p_225533_6_) {
         ItemStack stack = player.getMainHandItem().copy();
-        if (world.isClientSide) {
+        if (world.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (stack.getItem() instanceof ItemAugment && !(player.isCrouching())) {
@@ -152,7 +150,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
         CompoundTag newTag = new CompoundTag();
         newTag.putIntArray("settings", settings);
         newTag.putInt("direction", DirectionUtil.getId(te.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING)));
-        stack.set(Registration.FURNACE_SETTINGS.get(), CustomData.of(newTag));
+        stack.set(ironfurnaces.init.Registration.FURNACE_SETTINGS.get(), CustomData.of(newTag));
 
         ((BlockIronFurnaceTileBase)te).onUpdateSent();
         player.sendSystemMessage(Component.literal("Settings copied"));
@@ -200,7 +198,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
     }
 
     private InteractionResult interactWith(Level level, BlockPos pos, Player player, BlockState state) {
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             serverPlayer.openMenu((MenuProvider) be, buf -> buf.writeBlockPos(pos));
             if (be instanceof BlockIronFurnaceTileBase)
@@ -209,10 +207,9 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
             }
         }
 
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand) {
         if (state.getValue(BlockStateProperties.LIT)) {
             if (world.getBlockEntity(pos) == null)
@@ -224,7 +221,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
                 return;
             }
             BlockIronFurnaceTileBase tile = ((BlockIronFurnaceTileBase) world.getBlockEntity(pos));
-            if (tile.getItem(3).getItem() == Registration.SMOKING_AUGMENT.get())
+            if (tile.getItem(3).getItem() == ironfurnaces.init.Registration.SMOKING_AUGMENT.get())
             {
                 double lvt_5_1_ = (double)pos.getX() + 0.5D;
                 double lvt_7_1_ = (double)pos.getY();
@@ -236,7 +233,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
                 world.addParticle(ParticleTypes.SMOKE, lvt_5_1_, lvt_7_1_ + 1.1D, lvt_9_1_, 0.0D, 0.0D, 0.0D);
 
             }
-            else if (tile.getItem(3).getItem() == Registration.BLASTING_AUGMENT.get())
+            else if (tile.getItem(3).getItem() == ironfurnaces.init.Registration.BLASTING_AUGMENT.get())
             {
                 double lvt_5_1_ = (double)pos.getX() + 0.5D;
                 double lvt_7_1_ = (double)pos.getY();
@@ -280,26 +277,22 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
     }
 
     @Override
-    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean p_196243_5_) {
-        if (state.getBlock() != oldState.getBlock()) {
+    public void onBlockStateChange(LevelReader levelReader, BlockPos pos, BlockState oldState, BlockState newState) {
+        if (oldState.getBlock() != newState.getBlock() && levelReader instanceof ServerLevel world) {
             BlockEntity te = world.getBlockEntity(pos);
             if (te instanceof BlockIronFurnaceTileBase) {
-                BlockIronFurnaceTileBase furnace = ((BlockIronFurnaceTileBase)te);
-                if (furnace.owner != null)
-                {
-                    if (world.getPlayerByUUID(furnace.owner) != null)
-                    {
-                        world.getPlayerByUUID(furnace.owner).getData(Registration.PLAYER_FURNACES_LIST).furnacesList.remove(te.getBlockPos());
+                BlockIronFurnaceTileBase furnace = ((BlockIronFurnaceTileBase) te);
+                if (furnace.owner != null) {
+                    if (world.getPlayerByUUID(furnace.owner) != null) {
+                        world.getPlayerByUUID(furnace.owner).getData(ironfurnaces.init.Registration.PLAYER_FURNACES_LIST.get()).furnacesList.remove(te.getBlockPos());
                     }
                 }
                 Containers.dropContents(world, pos, furnace);
-                furnace.grantStoredRecipeExperience((ServerLevel) world, new Vec3(pos.getX(), pos.getY(), pos.getZ()));
+                furnace.grantStoredRecipeExperience(world, new Vec3(pos.getX(), pos.getY(), pos.getZ()));
                 world.updateNeighbourForOutputSignal(pos, this);
-
             }
-
-            super.onRemove(state, world, pos, oldState, p_196243_5_);
         }
+        super.onBlockStateChange(levelReader, pos, oldState, newState);
     }
 
     public int getComparatorInputOverride(BlockState state, Level world, BlockPos pos) {
@@ -438,7 +431,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
 
     @Nullable
     protected static <T extends BlockEntity> BlockEntityTicker<T> createFurnaceTicker(Level p_151988_, BlockEntityType<T> p_151989_, BlockEntityType<? extends BlockIronFurnaceTileBase> p_151990_) {
-        return p_151988_.isClientSide ? null : createTickerHelper(p_151989_, p_151990_, BlockIronFurnaceTileBase::tick);
+        return p_151988_.isClientSide() ? null : createTickerHelper(p_151989_, p_151990_, BlockIronFurnaceTileBase::tick);
     }
 
 }

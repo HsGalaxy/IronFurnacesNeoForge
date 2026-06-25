@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,9 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
-import java.util.List;
+import java.util.function.Consumer;
 
 public class ItemFurnace extends BlockItem {
 
@@ -38,12 +36,9 @@ public class ItemFurnace extends BlockItem {
         super(block, properties);
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext pContext, List<Component> tooltip, TooltipFlag pTooltipFlag) {
-
-        tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").withStyle(ChatFormatting.BLUE).append(Component.literal(" (" + getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE)));
-
+    public void appendHoverText(ItemStack stack, Item.TooltipContext pContext, TooltipDisplay tooltipDisplay, Consumer<Component> components, TooltipFlag pTooltipFlag) {
+        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").withStyle(ChatFormatting.BLUE).append(Component.literal(" (" + getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE)));
     }
 
 
@@ -51,55 +46,55 @@ public class ItemFurnace extends BlockItem {
     protected static int getCooktime(ItemStack stack)
     {
         Item item = stack.getItem();
-        if (item == Registration.MILLION_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.MILLION_FURNACE_ITEM.get())
         {
             return Config.millionFurnaceSpeed.get();
         }
-        if (item == Registration.ALLTHEMODIUM_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.ALLTHEMODIUM_FURNACE_ITEM.get())
         {
             return Config.allthemodiumFurnaceSpeed.get();
         }
-        if (item == Registration.VIBRANIUM_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.VIBRANIUM_FURNACE_ITEM.get())
         {
             return Config.vibraniumFurnaceSpeed.get();
         }
-        if (item == Registration.UNOBTAINIUM_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.UNOBTAINIUM_FURNACE_ITEM.get())
         {
             return Config.unobtainiumFurnaceSpeed.get();
         }
-        if (item == Registration.COPPER_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.COPPER_FURNACE_ITEM.get())
         {
             return Config.copperFurnaceSpeed.get();
         }
-        if (item == Registration.CRYSTAL_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.CRYSTAL_FURNACE_ITEM.get())
         {
             return Config.crystalFurnaceSpeed.get();
         }
-        if (item == Registration.DIAMOND_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.DIAMOND_FURNACE_ITEM.get())
         {
             return Config.diamondFurnaceSpeed.get();
         }
-        if (item == Registration.EMERALD_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.EMERALD_FURNACE_ITEM.get())
         {
             return Config.emeraldFurnaceSpeed.get();
         }
-        if (item == Registration.GOLD_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.GOLD_FURNACE_ITEM.get())
         {
             return Config.goldFurnaceSpeed.get();
         }
-        if (item == Registration.IRON_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.IRON_FURNACE_ITEM.get())
         {
             return Config.ironFurnaceSpeed.get();
         }
-        if (item == Registration.NETHERITE_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.NETHERITE_FURNACE_ITEM.get())
         {
             return Config.netheriteFurnaceSpeed.get();
         }
-        if (item == Registration.OBSIDIAN_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.OBSIDIAN_FURNACE_ITEM.get())
         {
             return Config.obsidianFurnaceSpeed.get();
         }
-        if (item == Registration.SILVER_FURNACE_ITEM.get())
+        if (item == ironfurnaces.init.Registration.SILVER_FURNACE_ITEM.get())
         {
             return Config.silverFurnaceSpeed.get();
         }

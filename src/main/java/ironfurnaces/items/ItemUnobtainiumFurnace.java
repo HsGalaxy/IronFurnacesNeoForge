@@ -41,10 +41,10 @@ public class ItemUnobtainiumFurnace extends ItemFurnace {
 
 
     @Override
-    public void onCraftedBy(ItemStack pStack, Level pLevel, Player pPlayer) {
-        super.onCraftedBy(pStack, pLevel, pPlayer);
+    public void onCraftedBy(ItemStack pStack, Player pPlayer) {
+        super.onCraftedBy(pStack, pPlayer);
         String name = pStack.getDisplayName().copy().getString().replaceAll("]", "").replaceAll("\\[", "");
         Component component = Component.literal(name);
-        pStack.set(DataComponents.CUSTOM_NAME, component.copy().withStyle(ChatFormatting.ITALIC).withStyle(ChatFormatting.LIGHT_PURPLE));
+        pStack.set(DataComponents.CUSTOM_NAME, component.copy().withStyle(ChatFormatting.ITALIC).withStyle(ChatFormatting.GREEN));
     }
 }

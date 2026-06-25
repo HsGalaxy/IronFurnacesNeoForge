@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,42 +17,38 @@
 package ironfurnaces.capability;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.util.ValueIOSerializable;
 
-public class PlayerFurnacesListProvider implements INBTSerializable<CompoundTag> {
+public class PlayerFurnacesListProvider implements ValueIOSerializable {
 
     public PlayerFurnacesList furnacesList = new PlayerFurnacesList();
 
     @Override
-    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
-        CompoundTag tag = new CompoundTag();
-        CompoundTag furnaces = new CompoundTag();
-        for (int i = 0; i < furnacesList.listFurances.size(); i++)
-        {
-            CompoundTag blockpos = new CompoundTag();
+    public void serialize(ValueOutput output) {
+        output.putInt("count", furnacesList.listFurances.size());
+        ValueOutput furnaces = output.child("furnaces");
+        for (int i = 0; i < furnacesList.listFurances.size(); i++) {
+            ValueOutput blockpos = furnaces.child("furnace" + i);
             blockpos.putInt("X", furnacesList.listFurances.get(i).getX());
             blockpos.putInt("Y", furnacesList.listFurances.get(i).getY());
             blockpos.putInt("Z", furnacesList.listFurances.get(i).getZ());
-            furnaces.put("furnace" + i, blockpos);
         }
-
-
-        tag.put("furnaces", furnaces);
-        tag.putInt("count", furnacesList.listFurances.size());
-        return tag;
     }
 
     @Override
-    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag tag) {
-        int size = tag.getInt("count");
-        CompoundTag furances = tag.getCompound("furnaces");
-        for (int i = 0; i < size; i++)
-        {
-            CompoundTag furance = furances.getCompound("furnace" + i);
-            BlockPos pos = new BlockPos(furance.getInt("X"), furance.getInt("Y"), furance.getInt("Z"));
-            furnacesList.listFurances.add(pos);
-        }
+    public void deserialize(ValueInput input) {
+        furnacesList.listFurances.clear();
+        int size = input.getIntOr("count", 0);
+        input.child("furnaces").ifPresent(furnaces -> {
+            for (int i = 0; i < size; i++) {
+                int idx = i;
+                furnaces.child("furnace" + idx).ifPresent(furnace -> {
+                    BlockPos pos = new BlockPos(furnace.getIntOr("X", 0), furnace.getIntOr("Y", 0), furnace.getIntOr("Z", 0));
+                    furnacesList.listFurances.add(pos);
+                });
+            }
+        });
     }
 }

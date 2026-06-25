@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
-import java.util.List;
+import net.minecraft.world.item.component.TooltipDisplay;
+import java.util.function.Consumer;
 
 public class ItemXmas extends Item {
 
@@ -35,13 +33,11 @@ public class ItemXmas extends Item {
         super(properties);
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack pStack, TooltipContext pContext, List<Component> tooltip, TooltipFlag pTooltipFlag) {
-
-        tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".xmas_right_click").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-        tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".xmas1").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.ITALIC));
-        tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".xmas2").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+    public void appendHoverText(ItemStack pStack, Item.TooltipContext pContext, TooltipDisplay tooltipDisplay, Consumer<Component> components, TooltipFlag pTooltipFlag) {
+        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".xmas_right_click").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".xmas1").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.ITALIC));
+        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".xmas2").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
     }
 
 }

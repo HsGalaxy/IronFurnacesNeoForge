@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
 import ironfurnaces.util.container.FactoryDataSlot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -43,7 +44,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
 
     protected BlockIronFurnaceTileBase te;
     protected Player playerEntity;
-    protected IItemHandler playerInventory;
+    protected Inventory playerInventory;
     protected final Level world;
 
 
@@ -53,7 +54,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         super(containerType, windowId);
         this.te = (BlockIronFurnaceTileBase) world.getBlockEntity(pos);
         this.playerEntity = player;
-        this.playerInventory = new InvWrapper(playerInventory);
+        this.playerInventory = playerInventory;
         this.world = playerInventory.player.level();
 
         //FURNACE
@@ -80,7 +81,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         this.addSlot(new SlotIronFurnaceOutputFactory(3, playerEntity, te, 16, 91, 55));
         this.addSlot(new SlotIronFurnaceOutputFactory(4, playerEntity, te,17, 112, 55));
         this.addSlot(new SlotIronFurnaceOutputFactory(5, playerEntity, te, 18, 133, 55));
-        layoutPlayerInventorySlots(8, 84);
+        this.addStandardInventorySlots(this.playerInventory, 8, 84);
         checkContainerSize(this.te, 19);
         addDataSlots();
 
@@ -270,7 +271,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
     }
 
     public int getMaxEnergy() {
-        return te.energyStorage.getMaxEnergyStored();
+        return te.energyStorage.getCapacity();
     }
 
 
@@ -346,15 +347,15 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
     public boolean getIsFurnace() {
         return this.te.isFurnace();
     }
-    
+
     public boolean getIsGenerator() {
         return this.te.isGenerator();
     }
-    
+
     public boolean getAutoOutput() {
         return this.te.getAutoOutput() == 1;
     }
-    
+
     public Component getTooltip(int index) {
         switch (te.furnaceSettings.get(index))
         {
@@ -516,7 +517,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
                     if (te.getItem(3).getItem() instanceof ItemAugmentSmoking)
                     {
                         if (te.getSmokingBurn(itemstack1) > 0) {
-                            if (itemstack1.hasCraftingRemainingItem())
+                            if (itemstack1.getCraftingRemainder() != null)
                             {
                                 if (te.getItem(6).isEmpty())
                                 {
@@ -545,7 +546,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
                     }
                     else
                     {
-                        if (BlockIronFurnaceTileBase.isItemFuel(itemstack1, RecipeType.SMELTING) && !(itemstack1.getItem() instanceof ItemHeater)) {
+                        if (BlockIronFurnaceTileBase.isItemFuel(itemstack1, RecipeType.SMELTING, te.getLevel()) && !(itemstack1.getItem() instanceof ItemHeater)) {
                             if (!this.moveItemStackTo(itemstack1, 6, 7, false)) {
                                 return ItemStack.EMPTY;
                             }
@@ -583,25 +584,25 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
 
                     slot.onQuickCraft(itemstack1, itemstack);
                 } else if (index >= 19) {
-                     if (this.te.hasRecipe(itemstack1)) {
-                         if (getTier() == 2)
-                         {
-                             if (!this.moveItemStackTo(itemstack1, 7, 13, false)) {
-                                 return ItemStack.EMPTY;
-                             }
-                         }
-                         else if (getTier() == 1)
-                         {
-                             if (!this.moveItemStackTo(itemstack1, 8, 12, false)) {
-                                 return ItemStack.EMPTY;
-                             }
-                         }
-                         else
-                         {
-                             if (!this.moveItemStackTo(itemstack1, 9, 11, false)) {
-                                 return ItemStack.EMPTY;
-                             }
-                         }
+                    if (this.te.hasRecipe(itemstack1)) {
+                        if (getTier() == 2)
+                        {
+                            if (!this.moveItemStackTo(itemstack1, 7, 13, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        }
+                        else if (getTier() == 1)
+                        {
+                            if (!this.moveItemStackTo(itemstack1, 8, 12, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        }
+                        else
+                        {
+                            if (!this.moveItemStackTo(itemstack1, 9, 11, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        }
 
                     } else if (BlockIronFurnaceTileBase.isItemAugment(itemstack1, 0)) {
                         if (!this.moveItemStackTo(itemstack1, 3, 4, false)) {
@@ -640,7 +641,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
                         if (!this.moveItemStackTo(itemstack1, 0, 1, false)) {
                             return ItemStack.EMPTY;
                         }
-                    } else if (BlockIronFurnaceTileBase.isItemFuel(itemstack1, RecipeType.SMELTING)) {
+                    } else if (BlockIronFurnaceTileBase.isItemFuel(itemstack1, RecipeType.SMELTING, te.getLevel())) {
                         if (!this.moveItemStackTo(itemstack1, 1, 2, false)) {
                             return ItemStack.EMPTY;
                         }
@@ -769,33 +770,28 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         return flag;
     }
 
-
-    private int addSlotRange(IItemHandler handler, int index, int x, int y, int amount, int dx) {
-        for (int i = 0 ; i < amount ; i++) {
-            addSlot(new SlotItemHandler(handler, index, x, y));
-            x += dx;
-            index++;
+    protected void addInventoryHotbarSlots(Container inventory, int left, int top) {
+        for(int x = 0; x < 9; ++x) {
+            this.addSlot(new Slot(inventory, x, left + x * 18, top));
         }
-        return index;
+
     }
 
-    private int addSlotBox(IItemHandler handler, int index, int x, int y, int horAmount, int dx, int verAmount, int dy) {
-        for (int j = 0 ; j < verAmount ; j++) {
-            index = addSlotRange(handler, index, x, y, horAmount, dx);
-            y += dy;
+    protected void addInventoryExtendedSlots(Container inventory, int left, int top) {
+        for(int y = 0; y < 3; ++y) {
+            for(int x = 0; x < 9; ++x) {
+                this.addSlot(new Slot(inventory, x + (y + 1) * 9, left + x * 18, top + y * 18));
+            }
         }
-        return index;
-    }
-
-    private void layoutPlayerInventorySlots(int leftCol, int topRow) {
-
-        // Player inventory
-        addSlotBox(playerInventory, 9, leftCol, topRow, 9, 18, 3, 18);
-
-        // Hotbar
-        topRow += 58;
-        addSlotRange(playerInventory, 0, leftCol, topRow, 9, 18);
 
     }
+
+    protected void addStandardInventorySlots(Container container, int left, int top) {
+        this.addInventoryExtendedSlots(container, left, top);
+        int hotbarSeparator = 4;
+        int topToHotbar = 58;
+        this.addInventoryHotbarSlots(container, left, top + 58);
+    }
+
 
 }

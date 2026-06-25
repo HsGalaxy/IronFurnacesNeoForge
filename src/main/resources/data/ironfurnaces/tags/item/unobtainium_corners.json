@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "#c:storage_blocks/unobtainium",
+    {
+      "id": "allthemodium:unobtainium_block",
+      "required": false
+    },
+    {
+      "id": "alltheores:unobtainium_block",
+      "required": false
+    }
+  ]
+}

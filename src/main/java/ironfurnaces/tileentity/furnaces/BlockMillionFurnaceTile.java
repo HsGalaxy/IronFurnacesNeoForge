@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import ironfurnaces.Config;
 import ironfurnaces.container.furnaces.BlockMillionFurnaceContainer;
 import ironfurnaces.init.Registration;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -33,37 +34,43 @@ import java.util.List;
 
 public class BlockMillionFurnaceTile extends BlockIronFurnaceTileBase {
     public BlockMillionFurnaceTile(BlockPos pos, BlockState state) {
-        super(Registration.MILLION_FURNACE_TILE.get(), pos, state);
+        super(ironfurnaces.init.Registration.MILLION_FURNACE_TILE.get(), pos, state);
     }
 
     public List<BlockIronFurnaceTileBase> furnaces = new ArrayList<>();
     public List<BlockPos> furnaces_to_load = new ArrayList<>();
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
+    public void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
         CompoundTag furnaces = new CompoundTag();
-        for (int i = 0; i < this.furnaces.size(); i++)
-        {
+        for (int i = 0; i < this.furnaces.size(); i++) {
             CompoundTag tag2 = new CompoundTag();
             tag2.putInt("X", this.furnaces.get(i).getBlockPos().getX());
             tag2.putInt("Y", this.furnaces.get(i).getBlockPos().getY());
             tag2.putInt("Z", this.furnaces.get(i).getBlockPos().getZ());
             furnaces.put("Furnace" + i, tag2);
         }
-        tag.put("Furnaces", furnaces);
-
+        output.store("Furnaces", CompoundTag.CODEC, furnaces);
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        CompoundTag furnaces = tag.getCompound("Furnaces");
-        for (int i = 0; i < furnaces.size(); i++)
-        {
-            CompoundTag furnace = furnaces.getCompound("Furnace" + i);
-            furnaces_to_load.add(new BlockPos(furnace.getInt("X"), furnace.getInt("Y"), furnace.getInt("Z")));
-        }
+    public void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        furnaces_to_load.clear();
+        input.read("Furnaces", CompoundTag.CODEC).ifPresent(furnaces -> {
+            for (int i = 0; ; i++) {
+                String key = "Furnace" + i;
+                var furnaceOpt = furnaces.getCompound(key);
+                if (furnaceOpt.isEmpty()) {
+                    break;
+                }
+                furnaceOpt.ifPresent(furnace -> furnaces_to_load.add(new BlockPos(
+                        furnace.getInt("X").orElse(0),
+                        furnace.getInt("Y").orElse(0),
+                        furnace.getInt("Z").orElse(0))));
+            }
+        });
     }
 
     @Override

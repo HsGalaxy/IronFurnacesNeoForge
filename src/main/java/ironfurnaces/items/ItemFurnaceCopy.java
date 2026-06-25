@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,14 +30,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
-import java.util.List;
+import java.util.function.Consumer;
 
 public class ItemFurnaceCopy extends Item {
 
@@ -46,33 +44,32 @@ public class ItemFurnaceCopy extends Item {
         super(properties);
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext pContext, List<Component> tooltip, TooltipFlag pTooltipFlag) {
-
-        CustomData customData = stack.get(Registration.FURNACE_SETTINGS.get());
-        if (customData != null)
-        {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext pContext, TooltipDisplay tooltipDisplay, Consumer<Component> components, TooltipFlag pTooltipFlag) {
+        CustomData customData = stack.get(ironfurnaces.init.Registration.FURNACE_SETTINGS.get());
+        if (customData != null) {
             CompoundTag tag = customData.copyTag();
-            if (!tag.isEmpty())
-            {
-                int[] settings = tag.getIntArray("settings");
-                tooltip.add(Component.literal("Down: " + settings[0]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("Up: " + settings[1]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("North: " + settings[2]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("South: " + settings[3]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("West: " + settings[4]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("East: " + settings[5]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("Auto Input: " + settings[6]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("Auto Output: " + settings[7]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("Redstone Mode: " + settings[8]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("Redstone Value: " + settings[9]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-                tooltip.add(Component.literal("Direction: " + DirectionUtil.fromId(tag.getInt("direction"))).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+            if (!tag.isEmpty()) {
+                tag.getIntArray("settings").ifPresent(settings -> {
+                    if (settings.length >= 10) {
+                        components.accept(Component.literal("Down: " + settings[0]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("Up: " + settings[1]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("North: " + settings[2]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("South: " + settings[3]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("West: " + settings[4]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("East: " + settings[5]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("Auto Input: " + settings[6]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("Auto Output: " + settings[7]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("Redstone Mode: " + settings[8]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        components.accept(Component.literal("Redstone Value: " + settings[9]).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+                        tag.getInt("direction").ifPresent(dir -> components.accept(Component.literal("Direction: " + DirectionUtil.fromId(dir)).setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY)))));
+                    }
+                });
             }
         }
 
-        tooltip.add(Component.literal("Right-click to copy settings").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Sneak & right-click to apply settings").withStyle(ChatFormatting.GRAY));
+        components.accept(Component.literal("Right-click to copy settings").withStyle(ChatFormatting.GRAY));
+        components.accept(Component.literal("Sneak & right-click to apply settings").withStyle(ChatFormatting.GRAY));
     }
 
 
@@ -85,7 +82,7 @@ public class ItemFurnaceCopy extends Item {
         {
             return super.useOn(ctx);
         }
-        if (!world.isClientSide) {
+        if (!world.isClientSide()) {
             BlockEntity te = world.getBlockEntity(pos);
 
             if (!(te instanceof BlockIronFurnaceTileBase)) {
@@ -93,15 +90,18 @@ public class ItemFurnaceCopy extends Item {
             }
 
             ItemStack stack = ctx.getItemInHand();
-            CustomData customData = stack.get(Registration.FURNACE_SETTINGS.get());
+            CustomData customData = stack.get(ironfurnaces.init.Registration.FURNACE_SETTINGS.get());
             if (customData != null) {
                 CompoundTag tag = customData.copyTag();
                 if (!tag.isEmpty()) {
-                    int[] settings = tag.getIntArray("settings");
+                    int[] settings = tag.getIntArray("settings").orElse(null);
+                    if (settings == null) {
+                        return super.useOn(ctx);
+                    }
                     for (int i = 0; i < settings.length; i++) {
                         ((BlockIronFurnaceTileBase) te).furnaceSettings.set(i, settings[i]);
                     }
-                    Direction dir = DirectionUtil.fromId(tag.getInt("direction"));
+                    Direction dir = DirectionUtil.fromId(tag.getInt("direction").orElse(0));
                     if (dir != Direction.UP && dir != Direction.DOWN)
                     {
                         if (te.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING) != dir) {

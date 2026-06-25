@@ -40,10 +40,14 @@ import ironfurnaces.tileentity.furnaces.*;
 import ironfurnaces.tileentity.furnaces.other.BlockAllthemodiumFurnaceTile;
 import ironfurnaces.tileentity.furnaces.other.BlockUnobtainiumFurnaceTile;
 import ironfurnaces.tileentity.furnaces.other.BlockVibraniumFurnaceTile;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -55,11 +59,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.registries.*;
 
 import java.util.function.Supplier;
 
@@ -67,8 +70,8 @@ import static ironfurnaces.IronFurnaces.MOD_ID;
 
 public class Registration {
 
-    private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(BuiltInRegistries.BLOCK, MOD_ID);
-    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, MOD_ID);
+    private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
+    private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
     private static final DeferredRegister<BlockEntityType<?>> TILES = DeferredRegister.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, MOD_ID);
     private static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(BuiltInRegistries.MENU, MOD_ID);
     public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, MOD_ID);
@@ -78,9 +81,21 @@ public class Registration {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, MOD_ID);
 
 
-
     //private static final DeferredRegister<EntityType<?>> ENTITIES = new DeferredRegister<>(ForgeRegistries.ENTITIES, MOD_ID);
     //private static final DeferredRegister<ModDimension> DIMENSIONS = new DeferredRegister<>(ForgeRegistries.MOD_DIMENSIONS, MOD_ID);
+
+
+    private static final TagKey<Item> ALLTHEMODIUM_INGOTS = TagKey.create(Registries.ITEM, Identifier.parse("c:ingots/allthemodium"));
+
+    public static boolean isAtmContentAvailable(HolderLookup.Provider registries) {
+        if (ModList.get().isLoaded("allthemodium")) {
+            return true;
+        }
+        return registries.lookupOrThrow(Registries.ITEM).get(ALLTHEMODIUM_INGOTS)
+                .map(tag -> tag.size() > 0)
+                .orElse(false);
+    }
+
 
     public static void init(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
@@ -127,182 +142,179 @@ public class Registration {
 
     public static final String GENERATOR_ID = "generator_blasting";
 
-    public static final class RecipeTypes {
-
-        public static mezz.jei.api.recipe.RecipeType<GeneratorRecipe> GENERATOR_BLASTING = mezz.jei.api.recipe.RecipeType.create(IronFurnaces.MOD_ID, "generator_blasting", GeneratorRecipe.class);
-        public static mezz.jei.api.recipe.RecipeType<SimpleGeneratorRecipe> GENERATOR_SMOKING = mezz.jei.api.recipe.RecipeType.create(IronFurnaces.MOD_ID, "generator_smoking", SimpleGeneratorRecipe.class);
-        public static mezz.jei.api.recipe.RecipeType<SimpleGeneratorRecipe> GENERATOR_REGULAR = mezz.jei.api.recipe.RecipeType.create(IronFurnaces.MOD_ID, "generator_regular", SimpleGeneratorRecipe.class);
-    }
     public static Supplier<RecipeType<GeneratorRecipe>> GENERATOR_RECIPE_TYPE = RECIPE_TYPES.register(GENERATOR_ID, () -> new RecipeType<GeneratorRecipe>() {
         @Override
         public String toString() {
             return GENERATOR_ID;
         }
     });
-    public static Supplier<RecipeSerializer<GeneratorRecipe>> GENERATOR_RECIPE_SERIALIZER = RECIPE_SERIALIZERS.register(GENERATOR_ID, GeneratorRecipe.Serializer::new);
+    public static Supplier<RecipeSerializer<GeneratorRecipe>> GENERATOR_RECIPE_SERIALIZER = RECIPE_SERIALIZERS.register(GENERATOR_ID, () -> GeneratorRecipe.SERIALIZER);
 
 
-    public static final DeferredHolder<Block, BlockIronFurnace> IRON_FURNACE = BLOCKS.register(BlockIronFurnace.IRON_FURNACE, () -> new BlockIronFurnace(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> IRON_FURNACE_ITEM = ITEMS.register(BlockIronFurnace.IRON_FURNACE, () -> new ItemFurnace(IRON_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockIronFurnaceTile>> IRON_FURNACE_TILE = TILES.register(BlockIronFurnace.IRON_FURNACE, () -> BlockEntityType.Builder.of(BlockIronFurnaceTile::new, IRON_FURNACE.get()).build(null));
+
+    public static final DeferredBlock<BlockIronFurnace> IRON_FURNACE = BLOCKS.registerBlock(BlockIronFurnace.IRON_FURNACE, BlockIronFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.IRON_BLOCK));
+    public static final DeferredItem<ItemFurnace> IRON_FURNACE_ITEM = ITEMS.registerItem(BlockIronFurnace.IRON_FURNACE, props -> new ItemFurnace(IRON_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockIronFurnaceTile>> IRON_FURNACE_TILE = TILES.register(BlockIronFurnace.IRON_FURNACE, () -> new BlockEntityType<>(BlockIronFurnaceTile::new, IRON_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockIronFurnaceContainer>> IRON_FURNACE_CONTAINER = CONTAINERS.register(BlockIronFurnace.IRON_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockIronFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
 
-    public static final DeferredHolder<Block, BlockGoldFurnace> GOLD_FURNACE = BLOCKS.register(BlockGoldFurnace.GOLD_FURNACE, () -> new BlockGoldFurnace(Block.Properties.ofFullCopy(Blocks.GOLD_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> GOLD_FURNACE_ITEM = ITEMS.register(BlockGoldFurnace.GOLD_FURNACE, () -> new ItemFurnace(GOLD_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockGoldFurnaceTile>> GOLD_FURNACE_TILE = TILES.register(BlockGoldFurnace.GOLD_FURNACE, () -> BlockEntityType.Builder.of(BlockGoldFurnaceTile::new, GOLD_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockGoldFurnace> GOLD_FURNACE = BLOCKS.registerBlock(BlockGoldFurnace.GOLD_FURNACE, BlockGoldFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.GOLD_BLOCK));
+    public static final DeferredItem<ItemFurnace> GOLD_FURNACE_ITEM = ITEMS.registerItem(BlockGoldFurnace.GOLD_FURNACE, props -> new ItemFurnace(GOLD_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockGoldFurnaceTile>> GOLD_FURNACE_TILE = TILES.register(BlockGoldFurnace.GOLD_FURNACE, () -> new BlockEntityType<>(BlockGoldFurnaceTile::new, GOLD_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockGoldFurnaceContainer>> GOLD_FURNACE_CONTAINER = CONTAINERS.register(BlockGoldFurnace.GOLD_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockGoldFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
-    public static final DeferredHolder<Block, BlockDiamondFurnace> DIAMOND_FURNACE = BLOCKS.register(BlockDiamondFurnace.DIAMOND_FURNACE, () -> new BlockDiamondFurnace(Block.Properties.ofFullCopy(Blocks.DIAMOND_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> DIAMOND_FURNACE_ITEM = ITEMS.register(BlockDiamondFurnace.DIAMOND_FURNACE, () -> new ItemFurnace(DIAMOND_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockDiamondFurnaceTile>> DIAMOND_FURNACE_TILE = TILES.register(BlockDiamondFurnace.DIAMOND_FURNACE, () -> BlockEntityType.Builder.of(BlockDiamondFurnaceTile::new, DIAMOND_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockDiamondFurnace> DIAMOND_FURNACE = BLOCKS.registerBlock(BlockDiamondFurnace.DIAMOND_FURNACE, BlockDiamondFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.DIAMOND_BLOCK));
+    public static final DeferredItem<ItemFurnace> DIAMOND_FURNACE_ITEM = ITEMS.registerItem(BlockDiamondFurnace.DIAMOND_FURNACE, props -> new ItemFurnace(DIAMOND_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockDiamondFurnaceTile>> DIAMOND_FURNACE_TILE = TILES.register(BlockDiamondFurnace.DIAMOND_FURNACE, () -> new BlockEntityType<>(BlockDiamondFurnaceTile::new, DIAMOND_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockDiamondFurnaceContainer>> DIAMOND_FURNACE_CONTAINER = CONTAINERS.register(BlockDiamondFurnace.DIAMOND_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockDiamondFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
-    public static final DeferredHolder<Block, BlockEmeraldFurnace> EMERALD_FURNACE = BLOCKS.register(BlockEmeraldFurnace.EMERALD_FURNACE, () -> new BlockEmeraldFurnace(Block.Properties.ofFullCopy(Blocks.EMERALD_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> EMERALD_FURNACE_ITEM = ITEMS.register(BlockEmeraldFurnace.EMERALD_FURNACE, () -> new ItemFurnace(EMERALD_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockEmeraldFurnaceTile>> EMERALD_FURNACE_TILE = TILES.register(BlockEmeraldFurnace.EMERALD_FURNACE, () -> BlockEntityType.Builder.of(BlockEmeraldFurnaceTile::new, EMERALD_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockEmeraldFurnace> EMERALD_FURNACE = BLOCKS.registerBlock(BlockEmeraldFurnace.EMERALD_FURNACE, BlockEmeraldFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.EMERALD_BLOCK));
+    public static final DeferredItem<ItemFurnace> EMERALD_FURNACE_ITEM = ITEMS.registerItem(BlockEmeraldFurnace.EMERALD_FURNACE, props -> new ItemFurnace(EMERALD_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockEmeraldFurnaceTile>> EMERALD_FURNACE_TILE = TILES.register(BlockEmeraldFurnace.EMERALD_FURNACE, () -> new BlockEntityType<>(BlockEmeraldFurnaceTile::new, EMERALD_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockEmeraldFurnaceContainer>> EMERALD_FURNACE_CONTAINER = CONTAINERS.register(BlockEmeraldFurnace.EMERALD_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockEmeraldFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
-    public static final DeferredHolder<Block, BlockObsidianFurnace> OBSIDIAN_FURNACE = BLOCKS.register(BlockObsidianFurnace.OBSIDIAN_FURNACE, () -> new BlockObsidianFurnace(Block.Properties.ofFullCopy(Blocks.OBSIDIAN))); // Assuming BlockObsidianFurnace exists
-    public static final DeferredHolder<Item, ItemFurnace> OBSIDIAN_FURNACE_ITEM = ITEMS.register(BlockObsidianFurnace.OBSIDIAN_FURNACE, () -> new ItemFurnace(OBSIDIAN_FURNACE.get(), new Item.Properties())); // Assuming Config.obsidianFurnaceSpeed exists and BlockObsidianFurnace
+    public static final DeferredBlock<BlockObsidianFurnace> OBSIDIAN_FURNACE = BLOCKS.registerBlock(BlockObsidianFurnace.OBSIDIAN_FURNACE, BlockObsidianFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.OBSIDIAN));
+    public static final DeferredItem<ItemFurnace> OBSIDIAN_FURNACE_ITEM = ITEMS.registerItem(BlockObsidianFurnace.OBSIDIAN_FURNACE, props -> new ItemFurnace(OBSIDIAN_FURNACE.value(), props), () -> new Item.Properties());
 
-    public static final Supplier<BlockEntityType<BlockObsidianFurnaceTile>> OBSIDIAN_FURNACE_TILE = TILES.register(BlockObsidianFurnace.OBSIDIAN_FURNACE, () -> BlockEntityType.Builder.of(BlockObsidianFurnaceTile::new, OBSIDIAN_FURNACE.get()).build(null));
+    public static final Supplier<BlockEntityType<BlockObsidianFurnaceTile>> OBSIDIAN_FURNACE_TILE = TILES.register(BlockObsidianFurnace.OBSIDIAN_FURNACE, () -> new BlockEntityType<>(BlockObsidianFurnaceTile::new, OBSIDIAN_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockObsidianFurnaceContainer>> OBSIDIAN_FURNACE_CONTAINER = CONTAINERS.register(BlockObsidianFurnace.OBSIDIAN_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockObsidianFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
 
-    public static final DeferredHolder<Block, BlockCrystalFurnace> CRYSTAL_FURNACE = BLOCKS.register(BlockCrystalFurnace.CRYSTAL_FURNACE, () -> new BlockCrystalFurnace(Block.Properties.ofFullCopy(Blocks.GLASS))); // Might want to use a custom crystal block here
-    public static final DeferredHolder<Item, ItemFurnace> CRYSTAL_FURNACE_ITEM = ITEMS.register(BlockCrystalFurnace.CRYSTAL_FURNACE, () -> new ItemFurnace(CRYSTAL_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockCrystalFurnaceTile>> CRYSTAL_FURNACE_TILE = TILES.register(BlockCrystalFurnace.CRYSTAL_FURNACE, () -> BlockEntityType.Builder.of(BlockCrystalFurnaceTile::new, CRYSTAL_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockCrystalFurnace> CRYSTAL_FURNACE = BLOCKS.registerBlock(BlockCrystalFurnace.CRYSTAL_FURNACE, BlockCrystalFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.GLASS));
+    public static final DeferredItem<ItemFurnace> CRYSTAL_FURNACE_ITEM = ITEMS.registerItem(BlockCrystalFurnace.CRYSTAL_FURNACE, props -> new ItemFurnace(CRYSTAL_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockCrystalFurnaceTile>> CRYSTAL_FURNACE_TILE = TILES.register(BlockCrystalFurnace.CRYSTAL_FURNACE, () -> new BlockEntityType<>(BlockCrystalFurnaceTile::new, CRYSTAL_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockCrystalFurnaceContainer>> CRYSTAL_FURNACE_CONTAINER = CONTAINERS.register(BlockCrystalFurnace.CRYSTAL_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockCrystalFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
 
-    public static final DeferredHolder<Block, BlockNetheriteFurnace> NETHERITE_FURNACE = BLOCKS.register(BlockNetheriteFurnace.NETHERITE_FURNACE, () -> new BlockNetheriteFurnace(Block.Properties.ofFullCopy(Blocks.NETHERITE_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> NETHERITE_FURNACE_ITEM = ITEMS.register(BlockNetheriteFurnace.NETHERITE_FURNACE, () -> new ItemFurnace(NETHERITE_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockNetheriteFurnaceTile>> NETHERITE_FURNACE_TILE = TILES.register(BlockNetheriteFurnace.NETHERITE_FURNACE, () -> BlockEntityType.Builder.of(BlockNetheriteFurnaceTile::new, NETHERITE_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockNetheriteFurnace> NETHERITE_FURNACE = BLOCKS.registerBlock(BlockNetheriteFurnace.NETHERITE_FURNACE, BlockNetheriteFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.NETHERITE_BLOCK));
+    public static final DeferredItem<ItemFurnace> NETHERITE_FURNACE_ITEM = ITEMS.registerItem(BlockNetheriteFurnace.NETHERITE_FURNACE, props -> new ItemFurnace(NETHERITE_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockNetheriteFurnaceTile>> NETHERITE_FURNACE_TILE = TILES.register(BlockNetheriteFurnace.NETHERITE_FURNACE, () -> new BlockEntityType<>(BlockNetheriteFurnaceTile::new, NETHERITE_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockNetheriteFurnaceContainer>> NETHERITE_FURNACE_CONTAINER = CONTAINERS.register(BlockNetheriteFurnace.NETHERITE_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockNetheriteFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
 
-    public static final DeferredHolder<Block, BlockCopperFurnace> COPPER_FURNACE = BLOCKS.register(BlockCopperFurnace.COPPER_FURNACE, () -> new BlockCopperFurnace(Block.Properties.ofFullCopy(Blocks.COPPER_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> COPPER_FURNACE_ITEM = ITEMS.register(BlockCopperFurnace.COPPER_FURNACE, () -> new ItemFurnace(COPPER_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockCopperFurnaceTile>> COPPER_FURNACE_TILE = TILES.register(BlockCopperFurnace.COPPER_FURNACE, () -> BlockEntityType.Builder.of(BlockCopperFurnaceTile::new, COPPER_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockCopperFurnace> COPPER_FURNACE = BLOCKS.registerBlock(BlockCopperFurnace.COPPER_FURNACE, BlockCopperFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.COPPER_BLOCK));
+    public static final DeferredItem<ItemFurnace> COPPER_FURNACE_ITEM = ITEMS.registerItem(BlockCopperFurnace.COPPER_FURNACE, props -> new ItemFurnace(COPPER_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockCopperFurnaceTile>> COPPER_FURNACE_TILE = TILES.register(BlockCopperFurnace.COPPER_FURNACE, () -> new BlockEntityType<>(BlockCopperFurnaceTile::new, COPPER_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockCopperFurnaceContainer>> COPPER_FURNACE_CONTAINER = CONTAINERS.register(BlockCopperFurnace.COPPER_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockCopperFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
 
-    public static final DeferredHolder<Block, BlockSilverFurnace> SILVER_FURNACE = BLOCKS.register(BlockSilverFurnace.SILVER_FURNACE, () -> new BlockSilverFurnace(Block.Properties.ofFullCopy(Blocks.COPPER_BLOCK)));
-    public static final DeferredHolder<Item, ItemFurnace> SILVER_FURNACE_ITEM = ITEMS.register(BlockSilverFurnace.SILVER_FURNACE, () -> new ItemFurnace(SILVER_FURNACE.get(), new Item.Properties()));
-    public static final Supplier<BlockEntityType<BlockSilverFurnaceTile>> SILVER_FURNACE_TILE = TILES.register(BlockSilverFurnace.SILVER_FURNACE, () -> BlockEntityType.Builder.of(BlockSilverFurnaceTile::new, SILVER_FURNACE.get()).build(null));
+    public static final DeferredBlock<BlockSilverFurnace> SILVER_FURNACE = BLOCKS.registerBlock(BlockSilverFurnace.SILVER_FURNACE, BlockSilverFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.COPPER_BLOCK));
+    public static final DeferredItem<ItemFurnace> SILVER_FURNACE_ITEM = ITEMS.registerItem(BlockSilverFurnace.SILVER_FURNACE, props -> new ItemFurnace(SILVER_FURNACE.value(), props), () -> new Item.Properties());
+    public static final Supplier<BlockEntityType<BlockSilverFurnaceTile>> SILVER_FURNACE_TILE = TILES.register(BlockSilverFurnace.SILVER_FURNACE, () -> new BlockEntityType<>(BlockSilverFurnaceTile::new, SILVER_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockSilverFurnaceContainer>> SILVER_FURNACE_CONTAINER = CONTAINERS.register(BlockSilverFurnace.SILVER_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockSilverFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
-    public static final DeferredHolder<Item, ItemUpgradeIron> IRON_UPGRADE = ITEMS.register("upgrade_iron", () -> new ItemUpgradeIron(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeGold> GOLD_UPGRADE = ITEMS.register("upgrade_gold", () -> new ItemUpgradeGold(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeDiamond> DIAMOND_UPGRADE = ITEMS.register("upgrade_diamond", () -> new ItemUpgradeDiamond(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeEmerald> EMERALD_UPGRADE = ITEMS.register("upgrade_emerald", () -> new ItemUpgradeEmerald(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeObsidian> OBSIDIAN_UPGRADE = ITEMS.register("upgrade_obsidian", () -> new ItemUpgradeObsidian(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeCrystal> CRYSTAL_UPGRADE = ITEMS.register("upgrade_crystal", () -> new ItemUpgradeCrystal(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeNetherite> NETHERITE_UPGRADE = ITEMS.register("upgrade_netherite", () -> new ItemUpgradeNetherite(new Item.Properties()));
+    public static final DeferredItem<ItemUpgradeIron> IRON_UPGRADE = ITEMS.registerItem("upgrade_iron", ItemUpgradeIron::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeGold> GOLD_UPGRADE = ITEMS.registerItem("upgrade_gold", ItemUpgradeGold::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeDiamond> DIAMOND_UPGRADE = ITEMS.registerItem("upgrade_diamond", ItemUpgradeDiamond::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeEmerald> EMERALD_UPGRADE = ITEMS.registerItem("upgrade_emerald", ItemUpgradeEmerald::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeObsidian> OBSIDIAN_UPGRADE = ITEMS.registerItem("upgrade_obsidian", ItemUpgradeObsidian::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeCrystal> CRYSTAL_UPGRADE = ITEMS.registerItem("upgrade_crystal", ItemUpgradeCrystal::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeNetherite> NETHERITE_UPGRADE = ITEMS.registerItem("upgrade_netherite", ItemUpgradeNetherite::new, () -> new Item.Properties());
 
-    public static final DeferredHolder<Item, ItemUpgradeCopper> COPPER_UPGRADE = ITEMS.register("upgrade_copper", () -> new ItemUpgradeCopper(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeSilver> SILVER_UPGRADE = ITEMS.register("upgrade_silver", () -> new ItemUpgradeSilver(new Item.Properties()));
+    public static final DeferredItem<ItemUpgradeCopper> COPPER_UPGRADE = ITEMS.registerItem("upgrade_copper", ItemUpgradeCopper::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeSilver> SILVER_UPGRADE = ITEMS.registerItem("upgrade_silver", ItemUpgradeSilver::new, () -> new Item.Properties());
 
-    public static final DeferredHolder<Item, ItemUpgradeObsidian2> OBSIDIAN2_UPGRADE = ITEMS.register("upgrade_obsidian2", () -> new ItemUpgradeObsidian2(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeIron2> IRON2_UPGRADE = ITEMS.register("upgrade_iron2", () -> new ItemUpgradeIron2(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeGold2> GOLD2_UPGRADE = ITEMS.register("upgrade_gold2", () -> new ItemUpgradeGold2(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeSilver2> SILVER2_UPGRADE = ITEMS.register("upgrade_silver2", () -> new ItemUpgradeSilver2(new Item.Properties()));
+    public static final DeferredItem<ItemUpgradeObsidian2> OBSIDIAN2_UPGRADE = ITEMS.registerItem("upgrade_obsidian2", ItemUpgradeObsidian2::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeIron2> IRON2_UPGRADE = ITEMS.registerItem("upgrade_iron2", ItemUpgradeIron2::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeGold2> GOLD2_UPGRADE = ITEMS.registerItem("upgrade_gold2", ItemUpgradeGold2::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeSilver2> SILVER2_UPGRADE = ITEMS.registerItem("upgrade_silver2", ItemUpgradeSilver2::new, () -> new Item.Properties());
 
-    public static final DeferredHolder<Block, BlockAllthemodiumFurnace> ALLTHEMODIUM_FURNACE = BLOCKS.register(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, () -> new BlockAllthemodiumFurnace(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK))); // Assuming BlockAllthemodiumFurnace exists
-    public static final DeferredHolder<Item, ItemAllthemodiumFurnace> ALLTHEMODIUM_FURNACE_ITEM = ITEMS.register(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, () -> new ItemAllthemodiumFurnace(ALLTHEMODIUM_FURNACE.get(), new Item.Properties())); // Assuming Config.allthemodiumFurnaceSpeed exists and BlockAllthemodiumFurnace
+    public static final DeferredBlock<BlockAllthemodiumFurnace> ALLTHEMODIUM_FURNACE = BLOCKS.registerBlock(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, BlockAllthemodiumFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.IRON_BLOCK));
+    public static final DeferredItem<ItemAllthemodiumFurnace> ALLTHEMODIUM_FURNACE_ITEM = ITEMS.registerItem(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, props -> new ItemAllthemodiumFurnace(ALLTHEMODIUM_FURNACE.value(), props), () -> new Item.Properties());
 
-    public static final Supplier<BlockEntityType<BlockAllthemodiumFurnaceTile>> ALLTHEMODIUM_FURNACE_TILE = TILES.register(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, () -> BlockEntityType.Builder.of(BlockAllthemodiumFurnaceTile::new, ALLTHEMODIUM_FURNACE.get()).build(null));
+    public static final Supplier<BlockEntityType<BlockAllthemodiumFurnaceTile>> ALLTHEMODIUM_FURNACE_TILE = TILES.register(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, () -> new BlockEntityType<>(BlockAllthemodiumFurnaceTile::new, ALLTHEMODIUM_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockAllthemodiumFurnaceContainer>> ALLTHEMODIUM_FURNACE_CONTAINER = CONTAINERS.register(BlockAllthemodiumFurnace.ALLTHEMODIUM_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockAllthemodiumFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
-    public static final DeferredHolder<Block, BlockVibraniumFurnace> VIBRANIUM_FURNACE = BLOCKS.register(BlockVibraniumFurnace.VIBRANIUM_FURNACE, () -> new BlockVibraniumFurnace(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK))); // Assuming BlockVibraniumFurnace exists
-    public static final DeferredHolder<Item, ItemVibraniumFurnace> VIBRANIUM_FURNACE_ITEM = ITEMS.register(BlockVibraniumFurnace.VIBRANIUM_FURNACE, () -> new ItemVibraniumFurnace(VIBRANIUM_FURNACE.get(), new Item.Properties())); // Assuming Config.vibraniumFurnaceSpeed exists and BlockVibraniumFurnace
+    public static final DeferredBlock<BlockVibraniumFurnace> VIBRANIUM_FURNACE = BLOCKS.registerBlock(BlockVibraniumFurnace.VIBRANIUM_FURNACE, BlockVibraniumFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.IRON_BLOCK));
+    public static final DeferredItem<ItemVibraniumFurnace> VIBRANIUM_FURNACE_ITEM = ITEMS.registerItem(BlockVibraniumFurnace.VIBRANIUM_FURNACE, props -> new ItemVibraniumFurnace(VIBRANIUM_FURNACE.value(), props), () -> new Item.Properties());
 
-    public static final Supplier<BlockEntityType<BlockVibraniumFurnaceTile>> VIBRANIUM_FURNACE_TILE = TILES.register(BlockVibraniumFurnace.VIBRANIUM_FURNACE, () -> BlockEntityType.Builder.of(BlockVibraniumFurnaceTile::new, VIBRANIUM_FURNACE.get()).build(null));
+    public static final Supplier<BlockEntityType<BlockVibraniumFurnaceTile>> VIBRANIUM_FURNACE_TILE = TILES.register(BlockVibraniumFurnace.VIBRANIUM_FURNACE, () -> new BlockEntityType<>(BlockVibraniumFurnaceTile::new, VIBRANIUM_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockVibraniumFurnaceContainer>> VIBRANIUM_FURNACE_CONTAINER = CONTAINERS.register(BlockVibraniumFurnace.VIBRANIUM_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockVibraniumFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
-    public static final DeferredHolder<Block, BlockUnobtainiumFurnace> UNOBTAINIUM_FURNACE = BLOCKS.register(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, () -> new BlockUnobtainiumFurnace(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK))); // Assuming BlockUnobtainiumFurnace exists
-    public static final DeferredHolder<Item, ItemUnobtainiumFurnace> UNOBTAINIUM_FURNACE_ITEM = ITEMS.register(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, () -> new ItemUnobtainiumFurnace(UNOBTAINIUM_FURNACE.get(), new Item.Properties())); // Assuming Config.unobtainiumFurnaceSpeed exists and BlockUnobtainiumFurnace
+    public static final DeferredBlock<BlockUnobtainiumFurnace> UNOBTAINIUM_FURNACE = BLOCKS.registerBlock(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, BlockUnobtainiumFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.IRON_BLOCK));
+    public static final DeferredItem<ItemUnobtainiumFurnace> UNOBTAINIUM_FURNACE_ITEM = ITEMS.registerItem(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, props -> new ItemUnobtainiumFurnace(UNOBTAINIUM_FURNACE.value(), props), () -> new Item.Properties());
 
-    public static final Supplier<BlockEntityType<BlockUnobtainiumFurnaceTile>> UNOBTAINIUM_FURNACE_TILE = TILES.register(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, () -> BlockEntityType.Builder.of(BlockUnobtainiumFurnaceTile::new, UNOBTAINIUM_FURNACE.get()).build(null));
+    public static final Supplier<BlockEntityType<BlockUnobtainiumFurnaceTile>> UNOBTAINIUM_FURNACE_TILE = TILES.register(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, () -> new BlockEntityType<>(BlockUnobtainiumFurnaceTile::new, UNOBTAINIUM_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockUnobtainiumFurnaceContainer>> UNOBTAINIUM_FURNACE_CONTAINER = CONTAINERS.register(BlockUnobtainiumFurnace.UNOBTAINIUM_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockUnobtainiumFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player)));
 
 
 
-    public static final DeferredHolder<Item, ItemUpgradeAllthemodium> ALLTHEMODIUM_UPGRADE = ITEMS.register("upgrade_allthemodium", () -> new ItemUpgradeAllthemodium(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeVibranium> VIBRANIUM_UPGRADE = ITEMS.register("upgrade_vibranium", () -> new ItemUpgradeVibranium(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemUpgradeUnobtainium> UNOBTAINIUM_UPGRADE = ITEMS.register("upgrade_unobtainium", () -> new ItemUpgradeUnobtainium(new Item.Properties()));
+    public static final DeferredItem<ItemUpgradeAllthemodium> ALLTHEMODIUM_UPGRADE = ITEMS.registerItem("upgrade_allthemodium", ItemUpgradeAllthemodium::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeVibranium> VIBRANIUM_UPGRADE = ITEMS.registerItem("upgrade_vibranium", ItemUpgradeVibranium::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemUpgradeUnobtainium> UNOBTAINIUM_UPGRADE = ITEMS.registerItem("upgrade_unobtainium", ItemUpgradeUnobtainium::new, () -> new Item.Properties());
 
 
 
-    public static final DeferredHolder<Block, BlockWirelessEnergyHeater> HEATER = BLOCKS.register(BlockWirelessEnergyHeater.HEATER, () -> new BlockWirelessEnergyHeater(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK))); // Assuming BlockHeater exists
-    public static final DeferredHolder<Item, BlockItemHeater> HEATER_ITEM = ITEMS.register(BlockWirelessEnergyHeater.HEATER, () -> new BlockItemHeater(HEATER.get(), new Item.Properties())); // Assuming Config.ironFurnaceSpeed exists
+    public static final DeferredBlock<BlockWirelessEnergyHeater> HEATER = BLOCKS.registerBlock(BlockWirelessEnergyHeater.HEATER, BlockWirelessEnergyHeater::new, () -> Block.Properties.ofFullCopy(Blocks.IRON_BLOCK));
+    public static final DeferredItem<BlockItemHeater> HEATER_ITEM = ITEMS.registerItem(BlockWirelessEnergyHeater.HEATER, props -> new BlockItemHeater(HEATER.value(), props), () -> new Item.Properties());
 
-    public static final Supplier<BlockEntityType<BlockWirelessEnergyHeaterTile>> HEATER_TILE = TILES.register(BlockWirelessEnergyHeater.HEATER, () -> BlockEntityType.Builder.of(BlockWirelessEnergyHeaterTile::new, HEATER.get()).build(null)); // Assuming BlockHeaterTile exists
+    public static final Supplier<BlockEntityType<BlockWirelessEnergyHeaterTile>> HEATER_TILE = TILES.register(BlockWirelessEnergyHeater.HEATER, () -> new BlockEntityType<>(BlockWirelessEnergyHeaterTile::new, HEATER.value()));
 
     public static final Supplier<MenuType<BlockWirelessEnergyHeaterContainer>> HEATER_CONTAINER = CONTAINERS.register(BlockWirelessEnergyHeater.HEATER, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockWirelessEnergyHeaterContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player))); // Assuming BlockHeaterContainer exists
 
 
-    public static final DeferredHolder<Item, ItemHeater> ITEM_HEATER = ITEMS.register("item_heater", () -> new ItemHeater(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<ItemHeater> ITEM_HEATER = ITEMS.registerItem("item_heater", ItemHeater::new, () -> new Item.Properties().stacksTo(1));
 
-    public static final DeferredHolder<Item, ItemAugmentBlasting> BLASTING_AUGMENT = ITEMS.register("augment_blasting", () -> new ItemAugmentBlasting(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemAugmentSmoking> SMOKING_AUGMENT = ITEMS.register("augment_smoking", () -> new ItemAugmentSmoking(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemAugmentFactory> FACTORY_AUGMENT = ITEMS.register("augment_factory", () -> new ItemAugmentFactory(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemAugmentGenerator> GENERATOR_AUGMENT = ITEMS.register("augment_generator", () -> new ItemAugmentGenerator(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemAugmentSpeed> SPEED_AUGMENT = ITEMS.register("augment_speed", () -> new ItemAugmentSpeed(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemAugmentFuel> FUEL_AUGMENT = ITEMS.register("augment_fuel", () -> new ItemAugmentFuel(new Item.Properties()));
+    public static final DeferredItem<ItemAugmentBlasting> BLASTING_AUGMENT = ITEMS.registerItem("augment_blasting", ItemAugmentBlasting::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemAugmentSmoking> SMOKING_AUGMENT = ITEMS.registerItem("augment_smoking", ItemAugmentSmoking::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemAugmentFactory> FACTORY_AUGMENT = ITEMS.registerItem("augment_factory", ItemAugmentFactory::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemAugmentGenerator> GENERATOR_AUGMENT = ITEMS.registerItem("augment_generator", ItemAugmentGenerator::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemAugmentSpeed> SPEED_AUGMENT = ITEMS.registerItem("augment_speed", ItemAugmentSpeed::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemAugmentFuel> FUEL_AUGMENT = ITEMS.registerItem("augment_fuel", ItemAugmentFuel::new, () -> new Item.Properties());
 
-    public static final DeferredHolder<Item, ItemSpooky> ITEM_SPOOKY = ITEMS.register("item_spooky", () -> new ItemSpooky(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemXmas> ITEM_XMAS = ITEMS.register("item_xmas", () -> new ItemXmas(new Item.Properties()));
+    public static final DeferredItem<ItemSpooky> ITEM_SPOOKY = ITEMS.registerItem("item_spooky", ItemSpooky::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemXmas> ITEM_XMAS = ITEMS.registerItem("item_xmas", ItemXmas::new, () -> new Item.Properties());
 
-    public static final DeferredHolder<Item, ItemFurnaceCopy> ITEM_COPY = ITEMS.register("item_copy", () -> new ItemFurnaceCopy(new Item.Properties().stacksTo(1)));
-    public static final DeferredHolder<Item, Item> RAINBOW_CORE = ITEMS.register("rainbow_core", () -> new Item(new Item.Properties()));
-    public static final DeferredHolder<Item, Item> RAINBOW_PLATING = ITEMS.register("rainbow_plating", () -> new Item(new Item.Properties()));
-    public static final DeferredHolder<Item, ItemRainbowCoal> RAINBOW_COAL = ITEMS.register("rainbow_coal", () -> new ItemRainbowCoal(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<ItemFurnaceCopy> ITEM_COPY = ITEMS.registerItem("item_copy", ItemFurnaceCopy::new, () -> new Item.Properties().stacksTo(1));
+    public static final DeferredItem<Item> RAINBOW_CORE = ITEMS.registerItem("rainbow_core", Item::new, () -> new Item.Properties());
+    public static final DeferredItem<Item> RAINBOW_PLATING = ITEMS.registerItem("rainbow_plating", Item::new, () -> new Item.Properties());
+    public static final DeferredItem<ItemRainbowCoal> RAINBOW_COAL = ITEMS.registerItem("rainbow_coal", ItemRainbowCoal::new, () -> new Item.Properties().stacksTo(1));
 
 
-    public static final DeferredHolder<Block, BlockMillionFurnace> MILLION_FURNACE = BLOCKS.register(BlockMillionFurnace.MILLION_FURNACE, () -> new BlockMillionFurnace(Block.Properties.ofFullCopy(Blocks.IRON_BLOCK))); // Assuming BlockMillionFurnace exists
-    public static final DeferredHolder<Item, ItemMillionFurnace> MILLION_FURNACE_ITEM = ITEMS.register(BlockMillionFurnace.MILLION_FURNACE, () -> new ItemMillionFurnace(MILLION_FURNACE.get(), new Item.Properties())); // Assuming Config.ironFurnaceSpeed exists
+    public static final DeferredBlock<BlockMillionFurnace> MILLION_FURNACE = BLOCKS.registerBlock(BlockMillionFurnace.MILLION_FURNACE, BlockMillionFurnace::new, () -> Block.Properties.ofFullCopy(Blocks.IRON_BLOCK));
+    public static final DeferredItem<ItemMillionFurnace> MILLION_FURNACE_ITEM = ITEMS.registerItem(BlockMillionFurnace.MILLION_FURNACE, props -> new ItemMillionFurnace(MILLION_FURNACE.value(), props), () -> new Item.Properties());
 
-    public static final Supplier<BlockEntityType<BlockMillionFurnaceTile>> MILLION_FURNACE_TILE = TILES.register(BlockMillionFurnace.MILLION_FURNACE, () -> BlockEntityType.Builder.of(BlockMillionFurnaceTile::new, MILLION_FURNACE.get()).build(null)); // Assuming BlockMillionFurnaceTile exists
+    public static final Supplier<BlockEntityType<BlockMillionFurnaceTile>> MILLION_FURNACE_TILE = TILES.register(BlockMillionFurnace.MILLION_FURNACE, () -> new BlockEntityType<>(BlockMillionFurnaceTile::new, MILLION_FURNACE.value()));
 
     public static final Supplier<MenuType<BlockMillionFurnaceContainer>> MILLION_FURNACE_CONTAINER = CONTAINERS.register(BlockMillionFurnace.MILLION_FURNACE, () -> IMenuTypeExtension.create(
             (windowId, playerInv, extraData) -> new BlockMillionFurnaceContainer(windowId, playerInv.player.level(), extraData.readBlockPos(), playerInv, playerInv.player))); // Assuming BlockMillionFurnaceContainer exists
+
+
 
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> tabIronFurnaces = CREATIVE_MODE_TABS.register("ironfurnaces_tab", () -> CreativeModeTab.builder()
@@ -311,49 +323,60 @@ public class Registration {
             .title(Component.translatable("itemGroup.ironfurnaces"))
             .displayItems((parameters, output) -> {
 
-                output.accept(Registration.IRON_FURNACE_ITEM.get());
-                output.accept(Registration.GOLD_FURNACE_ITEM.get());
-                output.accept(Registration.DIAMOND_FURNACE_ITEM.get());
-                output.accept(Registration.EMERALD_FURNACE_ITEM.get());
-                output.accept(Registration.OBSIDIAN_FURNACE_ITEM.get());
-                output.accept(Registration.CRYSTAL_FURNACE_ITEM.get());
-                output.accept(Registration.NETHERITE_FURNACE_ITEM.get());
-                output.accept(Registration.COPPER_FURNACE_ITEM.get());
-                output.accept(Registration.SILVER_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.IRON_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.GOLD_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.DIAMOND_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.EMERALD_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.OBSIDIAN_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.CRYSTAL_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.NETHERITE_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.COPPER_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.SILVER_FURNACE_ITEM.get());
 
-                output.accept(Registration.IRON_UPGRADE.get());
-                output.accept(Registration.GOLD_UPGRADE.get());
-                output.accept(Registration.DIAMOND_UPGRADE.get());
-                output.accept(Registration.EMERALD_UPGRADE.get());
-                output.accept(Registration.OBSIDIAN_UPGRADE.get());
-                output.accept(Registration.CRYSTAL_UPGRADE.get());
-                output.accept(Registration.NETHERITE_UPGRADE.get());
-                output.accept(Registration.COPPER_UPGRADE.get());
-                output.accept(Registration.SILVER_UPGRADE.get());
+                if (isAtmContentAvailable(parameters.holders())) {
+                    output.accept(ironfurnaces.init.Registration.ALLTHEMODIUM_FURNACE_ITEM.get());
+                    output.accept(ironfurnaces.init.Registration.VIBRANIUM_FURNACE_ITEM.get());
+                    output.accept(ironfurnaces.init.Registration.UNOBTAINIUM_FURNACE_ITEM.get());
+                }
 
-                output.accept(Registration.OBSIDIAN2_UPGRADE.get());
-                output.accept(Registration.IRON2_UPGRADE.get());
-                output.accept(Registration.GOLD2_UPGRADE.get());
-                output.accept(Registration.SILVER2_UPGRADE.get());
-                output.accept(Registration.HEATER_ITEM.get());
-                output.accept(Registration.ITEM_HEATER.get());
-                output.accept(Registration.BLASTING_AUGMENT.get());
-                output.accept(Registration.SMOKING_AUGMENT.get());
-                output.accept(Registration.FACTORY_AUGMENT.get());
+                output.accept(ironfurnaces.init.Registration.IRON_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.GOLD_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.DIAMOND_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.EMERALD_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.OBSIDIAN_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.CRYSTAL_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.NETHERITE_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.COPPER_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.SILVER_UPGRADE.get());
 
-                output.accept(Registration.GENERATOR_AUGMENT.get());
-                output.accept(Registration.SPEED_AUGMENT.get());
-                output.accept(Registration.FUEL_AUGMENT.get());
-                output.accept(Registration.ITEM_SPOOKY.get());
-                output.accept(Registration.ITEM_XMAS.get());
-                output.accept(Registration.ITEM_COPY.get());
-                output.accept(Registration.RAINBOW_CORE.get());
-                output.accept(Registration.RAINBOW_PLATING.get());
+                if (isAtmContentAvailable(parameters.holders())) {
+                    output.accept(ironfurnaces.init.Registration.ALLTHEMODIUM_UPGRADE.get());
+                    output.accept(ironfurnaces.init.Registration.VIBRANIUM_UPGRADE.get());
+                    output.accept(ironfurnaces.init.Registration.UNOBTAINIUM_UPGRADE.get());
+                }
 
-                output.accept(Registration.MILLION_FURNACE_ITEM.get());
-                output.accept(Registration.RAINBOW_COAL.get());
+                output.accept(ironfurnaces.init.Registration.OBSIDIAN2_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.IRON2_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.GOLD2_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.SILVER2_UPGRADE.get());
+                output.accept(ironfurnaces.init.Registration.HEATER_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.ITEM_HEATER.get());
+                output.accept(ironfurnaces.init.Registration.BLASTING_AUGMENT.get());
+                output.accept(ironfurnaces.init.Registration.SMOKING_AUGMENT.get());
+                output.accept(ironfurnaces.init.Registration.FACTORY_AUGMENT.get());
+
+                output.accept(ironfurnaces.init.Registration.GENERATOR_AUGMENT.get());
+                output.accept(ironfurnaces.init.Registration.SPEED_AUGMENT.get());
+                output.accept(ironfurnaces.init.Registration.FUEL_AUGMENT.get());
+                output.accept(ironfurnaces.init.Registration.ITEM_SPOOKY.get());
+                output.accept(ironfurnaces.init.Registration.ITEM_XMAS.get());
+                output.accept(ironfurnaces.init.Registration.ITEM_COPY.get());
+                output.accept(ironfurnaces.init.Registration.RAINBOW_CORE.get());
+                output.accept(ironfurnaces.init.Registration.RAINBOW_PLATING.get());
+
+                output.accept(ironfurnaces.init.Registration.MILLION_FURNACE_ITEM.get());
+                output.accept(ironfurnaces.init.Registration.RAINBOW_COAL.get());
             }).build());
-
 
 
 

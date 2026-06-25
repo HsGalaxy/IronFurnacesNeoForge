@@ -1,7 +1,1 @@
-﻿{
-  "type": "ironfurnaces:generator_blasting",
-  "energy": 40000,
-  "ingredient": {
-    "item": "minecraft:amethyst_shard"
-  }
-}
+{"type":"ironfurnaces:generator_blasting","energy":40000,"ingredient":"minecraft:amethyst_shard"}

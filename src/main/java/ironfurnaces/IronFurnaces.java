@@ -24,10 +24,6 @@ import ironfurnaces.network.Messages;
 import ironfurnaces.tileentity.BlockWirelessEnergyHeaterTile;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
 import ironfurnaces.util.EventHandler;
-import net.minecraft.world.Container;
-import net.minecraft.world.WorldlyContainer;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -35,12 +31,8 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.items.wrapper.InvWrapper;
-import net.neoforged.neoforge.items.wrapper.SidedInvWrapper;
+import net.neoforged.neoforge.transfer.item.WorldlyContainerWrapper;
 import org.slf4j.Logger;
-
-import java.util.Iterator;
-import java.util.List;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(IronFurnaces.MOD_ID)
@@ -50,10 +42,6 @@ public class IronFurnaces
     public static final String MOD_ID = "ironfurnaces";
 
     public static final Logger LOGGER = LogUtils.getLogger();
-
-    public static CreativeModeTab tabIronFurnaces;
-
-
 
 
     public IronFurnaces(IEventBus modEventBus, ModContainer modContainer) {
@@ -77,55 +65,62 @@ public class IronFurnaces
 
     private void registerCapabilities(RegisterCapabilitiesEvent event)
     {
-        List furnaces = List.of(
-                Registration.COPPER_FURNACE.get(),
-                Registration.CRYSTAL_FURNACE.get(),
-                Registration.DIAMOND_FURNACE.get(),
-                Registration.EMERALD_FURNACE.get(),
-                Registration.GOLD_FURNACE.get(),
-                Registration.IRON_FURNACE.get(),
-                Registration.MILLION_FURNACE.get(),
-                Registration.NETHERITE_FURNACE.get(),
-                Registration.OBSIDIAN_FURNACE.get(),
-                Registration.SILVER_FURNACE.get(),
-                Registration.ALLTHEMODIUM_FURNACE.get(),
-                Registration.VIBRANIUM_FURNACE.get(),
-                Registration.UNOBTAINIUM_FURNACE.get()
-        );
 
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.HEATER_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.HEATER_TILE.get(),
+                (be, side) -> ((BlockWirelessEnergyHeaterTile) be).energyStorage);
 
-        event.registerBlock(Capabilities.ItemHandler.BLOCK,
-                (level, pos, state, be, side) -> (side == null ? new InvWrapper((Container) be) : new SidedInvWrapper((WorldlyContainer)be, side)),
-                // blocks to register for
-                Registration.HEATER.get());
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.IRON_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.IRON_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
-        event.registerBlock(Capabilities.EnergyStorage.BLOCK,
-                (level, pos, state, be, side) -> ((BlockWirelessEnergyHeaterTile) be).energyStorage,
-                // blocks to register for
-                Registration.HEATER.get());
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.GOLD_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.GOLD_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.DIAMOND_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.DIAMOND_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.EMERALD_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.EMERALD_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
-        Iterator var3 = furnaces.iterator();
-        Iterator var4 = furnaces.iterator();
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.OBSIDIAN_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.OBSIDIAN_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
-        while(var3.hasNext()) {
-            event.registerBlock(Capabilities.ItemHandler.BLOCK,
-                    (level, pos, state, be, side) -> (side == null ? new InvWrapper((Container) be) : new SidedInvWrapper((WorldlyContainer)be, side)),
-                    // blocks to register for
-                    (Block) var3.next()
-            );
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.CRYSTAL_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.CRYSTAL_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
-        }
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.NETHERITE_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.NETHERITE_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
-        while(var4.hasNext()) {
-            event.registerBlock(Capabilities.EnergyStorage.BLOCK,
-                    (level, pos, state, be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage,
-                    // blocks to register for
-                    (Block) var4.next()
-            );
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.COPPER_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.COPPER_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
-        }
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.SILVER_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.SILVER_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
+
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.ALLTHEMODIUM_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.ALLTHEMODIUM_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
+
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.VIBRANIUM_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.VIBRANIUM_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
+
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.UNOBTAINIUM_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.UNOBTAINIUM_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
+
+        event.registerBlockEntity(Capabilities.Item.BLOCK, ironfurnaces.init.Registration.MILLION_FURNACE_TILE.get(), WorldlyContainerWrapper::new);
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, ironfurnaces.init.Registration.MILLION_FURNACE_TILE.get(),
+                (be, side) -> ((BlockIronFurnaceTileBase) be).energyStorage);
 
 
     }

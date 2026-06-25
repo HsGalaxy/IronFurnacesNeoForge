@@ -1,4 +1,13 @@
 {
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:tag_empty",
+        "tag": "c:ingots/unobtainium"
+      }
+    }
+  ],
   "type": "minecraft:crafting_shaped",
   "pattern": [
     "B#B",
@@ -6,23 +15,11 @@
     "B#B"
   ],
   "key": {
-    "#": {
-      "tag": "c:ingots/unobtainium"
-    },
-    "B": {
-      "tag": "c:storage_blocks/unobtainium"
-    },
-    "X": {
-      "tag": "c:ingots/vibranium"
-    }
+    "#": "#c:ingots/unobtainium",
+    "B": "#ironfurnaces:unobtainium_corners",
+    "X": "#c:ingots/vibranium"
   },
   "result": {
     "id": "ironfurnaces:upgrade_unobtainium"
-  },
-  "conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "allthemodium"
-    }
-  ]
+  }
 }

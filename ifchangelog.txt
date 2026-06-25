@@ -1,3 +1,6 @@
+4.4.0
++Port to Minecraft 26.1.2
++Added Astryxion to authors
 4.3.2
 +Fixed factory furnaces not doing an autoIO directly after smelting
 +Fixed a couple recipes not checking conditions properly

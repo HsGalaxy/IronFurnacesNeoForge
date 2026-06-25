@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import ironfurnaces.network.Messages;
 import ironfurnaces.network.PacketFurnaceSettings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import org.lwjgl.glfw.GLFW;
 
@@ -45,8 +46,7 @@ public class FurnaceGuiButton {
     public int u_enabled;
     public int v_enabled;
 
-    public FurnaceGuiButton(int left, int top, int x, int y, int width, int height, int u, int v, int u_hover, int v_hover, int u_enabled, int v_enabled)
-    {
+    public FurnaceGuiButton(int left, int top, int x, int y, int width, int height, int u, int v, int u_hover, int v_hover, int u_enabled, int v_enabled) {
         this.left = left;
         this.top = top;
         this.x = x;
@@ -61,42 +61,32 @@ public class FurnaceGuiButton {
         this.v_enabled = v_enabled;
     }
 
-    public FurnaceGuiButton(int left, int top, int x, int y, int width, int height)
-    {
+    public FurnaceGuiButton(int left, int top, int x, int y, int width, int height) {
         this(left, top, x, y, width, height, -1, -1, -1, -1, -1, -1);
     }
 
-    public FurnaceGuiButton(int left, int top, int x, int y, int width, int height, int u_hover, int v_hover)
-    {
+    public FurnaceGuiButton(int left, int top, int x, int y, int width, int height, int u_hover, int v_hover) {
         this(left, top, x, y, width, height, -1, -1, u_hover, v_hover, u_hover, v_hover);
     }
 
-    public void changeEnabledUV(int u, int v)
-    {
+    public void changeEnabledUV(int u, int v) {
         this.u_enabled = u;
         this.v_enabled = v;
     }
 
-    public void onClick(double mouseX, double mouseY, BlockPos pos, int index, int set, boolean condition)
-    {
-        if (condition)
-        {
-            if (hovering(mouseX, mouseY))
-            {
+    public void onClick(double mouseX, double mouseY, BlockPos pos, int index, int set, boolean condition) {
+        if (condition) {
+            if (hovering(mouseX, mouseY)) {
                 Messages.sendToServer(new PacketFurnaceSettings(pos.getX(), pos.getY(), pos.getZ(), index, set));
                 Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 0.6F, 0.3F));
             }
         }
     }
 
-    public void onRightClick(double mouseX, double mouseY, int button, BlockPos pos, int index, int set, boolean condition)
-    {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_2)
-        {
-            if (condition)
-            {
-                if (hovering(mouseX, mouseY))
-                {
+    public void onRightClick(double mouseX, double mouseY, int button, BlockPos pos, int index, int set, boolean condition) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
+            if (condition) {
+                if (hovering(mouseX, mouseY)) {
                     Messages.sendToServer(new PacketFurnaceSettings(pos.getX(), pos.getY(), pos.getZ(), index, set));
                     Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 0.3F, 0.3F));
                 }
@@ -104,53 +94,45 @@ public class FurnaceGuiButton {
         }
     }
 
-    public void render(ResourceLocation location, GuiGraphics matrix, int mouseX, int mouseY, boolean enabled)
-    {
+    public void render(Identifier location, GuiGraphicsExtractor matrix, int mouseX, int mouseY, boolean enabled) {
 
-            if (!hovering(mouseX, mouseY) && hasUV())
-                matrix.blit(location, left + x, top + y, u, v, width, height);
+        if (!hovering(mouseX, mouseY) && hasUV())
+            matrix.blit(RenderPipelines.GUI_TEXTURED, location, left + x, top + y, u, v, width, height, 256, 256);
 
-            if (hovering(mouseX, mouseY) && hasUVHover())
-                matrix.blit(location, left + x, top + y, u_hover, v_hover, width, height);
+        if (hovering(mouseX, mouseY) && hasUVHover())
+            matrix.blit(RenderPipelines.GUI_TEXTURED, location, left + x, top + y, u_hover, v_hover, width, height, 256, 256);
 
-            if (enabled && hasUVEnabled())
-                matrix.blit(location, left + x, top + y, u_enabled, v_enabled, width, height);
-
+        if (enabled && hasUVEnabled())
+            matrix.blit(RenderPipelines.GUI_TEXTURED, location, left + x, top + y, u_enabled, v_enabled, width, height, 256, 256);
 
 
     }
 
-    public boolean hovering(double mouseX, double mouseY)
-    {
+    public boolean hovering(double mouseX, double mouseY) {
         return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
     }
 
-    public void renderTooltip(Font font, GuiGraphics matrix, Component text, int mouseX, int mouseY, boolean condition)
-    {
+    public void renderTooltip(Font font, GuiGraphicsExtractor graphics, Component text, int tooltipX, int tooltipY, int guiMouseX, int guiMouseY, boolean condition) {
         if (condition)
-            if (hovering(mouseX, mouseY))
-                matrix.renderTooltip(font, text, mouseX, mouseY);
+            if (hovering(guiMouseX, guiMouseY))
+                graphics.setTooltipForNextFrame(font, text, tooltipX, tooltipY);
     }
 
-    public void renderComponentTooltip(Font font, GuiGraphics matrix, List<Component> text, int mouseX, int mouseY, boolean condition)
-    {
+    public void renderComponentTooltip(Font font, GuiGraphicsExtractor graphics, List<Component> text, int tooltipX, int tooltipY, int guiMouseX, int guiMouseY, boolean condition) {
         if (condition)
-            if (hovering(mouseX, mouseY))
-                matrix.renderComponentTooltip(font, text, mouseX, mouseY);
+            if (hovering(guiMouseX, guiMouseY))
+                graphics.setComponentTooltipForNextFrame(font, text, tooltipX, tooltipY);
     }
 
-    public boolean hasUV()
-    {
+    public boolean hasUV() {
         return u >= 0 && v >= 0;
     }
 
-    public boolean hasUVHover()
-    {
+    public boolean hasUVHover() {
         return u_hover >= 0 && v_hover >= 0;
     }
 
-    public boolean hasUVEnabled()
-    {
+    public boolean hasUVEnabled() {
         return u_enabled >= 0 && v_enabled >= 0;
     }
 
@@ -162,10 +144,10 @@ public class FurnaceGuiButton {
         InputConstants.Key key = InputConstants.Type.KEYSYM.getOrCreate(glfw);
         int keyCode = key.getValue();
         if (keyCode != InputConstants.UNKNOWN.getValue()) {
-            long windowHandle = Minecraft.getInstance().getWindow().getWindow();
+            var window = Minecraft.getInstance().getWindow();
             try {
                 if (key.getType() == InputConstants.Type.KEYSYM) {
-                    return InputConstants.isKeyDown(windowHandle, keyCode);
+                    return InputConstants.isKeyDown(window, keyCode);
                 } /**else if (key.getType() == InputMappings.Type.MOUSE) {
                  return GLFW.glfwGetMouseButton(windowHandle, keyCode) == GLFW.GLFW_PRESS;
                  }**/

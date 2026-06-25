@@ -1,7 +1,1 @@
-﻿{
-  "type": "ironfurnaces:generator_blasting",
-  "energy": 1000000,
-  "ingredient": {
-    "item": "minecraft:nether_star"
-  }
-}
+{"type":"ironfurnaces:generator_blasting","energy":1000000,"ingredient":"minecraft:nether_star"}

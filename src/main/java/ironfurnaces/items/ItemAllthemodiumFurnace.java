@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -38,8 +37,8 @@ public class ItemAllthemodiumFurnace extends ItemFurnace {
 
 
     @Override
-    public void onCraftedBy(ItemStack pStack, Level pLevel, Player pPlayer) {
-        super.onCraftedBy(pStack, pLevel, pPlayer);
+    public void onCraftedBy(ItemStack pStack, Player pPlayer) {
+        super.onCraftedBy(pStack, pPlayer);
         String name = pStack.getDisplayName().copy().getString().replaceAll("]", "").replaceAll("\\[", "");
         Component component = Component.literal(name);
         pStack.set(DataComponents.CUSTOM_NAME, component.copy().withStyle(ChatFormatting.ITALIC).withStyle(ChatFormatting.GOLD));

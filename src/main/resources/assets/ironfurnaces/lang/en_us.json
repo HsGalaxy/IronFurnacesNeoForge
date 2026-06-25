@@ -28,6 +28,21 @@
     "item.ironfurnaces.upgrade_gold2": "Silver to Gold Furnace Upgrade",
     "item.ironfurnaces.item_copy": "Furnace Settings Linker",
 
+    "_comment": "Furnace items (item.* required for BlockItem display names in 26.x)",
+    "item.ironfurnaces.iron_furnace": "Iron Furnace",
+    "item.ironfurnaces.gold_furnace": "Golden Furnace",
+    "item.ironfurnaces.diamond_furnace": "Diamond Furnace",
+    "item.ironfurnaces.emerald_furnace": "Emerald Furnace",
+    "item.ironfurnaces.obsidian_furnace": "Obsidian Furnace",
+    "item.ironfurnaces.crystal_furnace": "Crystal Furnace",
+    "item.ironfurnaces.netherite_furnace": "Netherite Furnace",
+    "item.ironfurnaces.copper_furnace": "Copper Furnace",
+    "item.ironfurnaces.silver_furnace": "Silver Furnace",
+    "item.ironfurnaces.million_furnace": "Rainbow Furnace",
+    "item.ironfurnaces.allthemodium_furnace": "Allthemodium Furnace",
+    "item.ironfurnaces.vibranium_furnace": "Vibranium Furnace",
+    "item.ironfurnaces.unobtainium_furnace": "Unobtainium Furnace",
+
     "_comment": "TAB",
     "itemGroup.ironfurnaces": "Iron Furnaces",
 

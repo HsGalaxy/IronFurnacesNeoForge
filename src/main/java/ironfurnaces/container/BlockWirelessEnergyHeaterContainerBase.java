@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import ironfurnaces.container.slots.SlotHeater;
 import ironfurnaces.items.ItemHeater;
 import ironfurnaces.tileentity.BlockWirelessEnergyHeaterTile;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -28,9 +29,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
-import net.neoforged.neoforge.items.wrapper.InvWrapper;
+
 
 
 public class BlockWirelessEnergyHeaterContainerBase extends AbstractContainerMenu {
@@ -38,7 +37,7 @@ public class BlockWirelessEnergyHeaterContainerBase extends AbstractContainerMen
 
     protected BlockWirelessEnergyHeaterTile te;
     protected Player playerEntity;
-    protected IItemHandler playerInventory;
+    protected Inventory playerInventory;
     protected final Level world;
 
 
@@ -46,11 +45,11 @@ public class BlockWirelessEnergyHeaterContainerBase extends AbstractContainerMen
         super(menuType, windowId);
         this.te = (BlockWirelessEnergyHeaterTile) world.getBlockEntity(pos);
         this.playerEntity = player;
-        this.playerInventory = new InvWrapper(playerInventory);
+        this.playerInventory = playerInventory;
         this.world = playerInventory.player.level();
         trackPower();
         this.addSlot(new SlotHeater(te, 0, 80, 37));
-        layoutPlayerInventorySlots(8, 84);
+        this.addStandardInventorySlots(this.playerInventory, 8, 84);
 
     }
 
@@ -96,30 +95,27 @@ public class BlockWirelessEnergyHeaterContainerBase extends AbstractContainerMen
         return j != 0 && i != 0 ? i * pixels / j : 0;
     }
 
-    private int addSlotRange(IItemHandler handler, int index, int x, int y, int amount, int dx) {
-        for (int i = 0 ; i < amount ; i++) {
-            addSlot(new SlotItemHandler(handler, index, x, y));
-            x += dx;
-            index++;
+    protected void addInventoryHotbarSlots(Container inventory, int left, int top) {
+        for(int x = 0; x < 9; ++x) {
+            this.addSlot(new Slot(inventory, x, left + x * 18, top));
         }
-        return index;
+
     }
 
-    private int addSlotBox(IItemHandler handler, int index, int x, int y, int horAmount, int dx, int verAmount, int dy) {
-        for (int j = 0 ; j < verAmount ; j++) {
-            index = addSlotRange(handler, index, x, y, horAmount, dx);
-            y += dy;
+    protected void addInventoryExtendedSlots(Container inventory, int left, int top) {
+        for(int y = 0; y < 3; ++y) {
+            for(int x = 0; x < 9; ++x) {
+                this.addSlot(new Slot(inventory, x + (y + 1) * 9, left + x * 18, top + y * 18));
+            }
         }
-        return index;
+
     }
 
-    private void layoutPlayerInventorySlots(int leftCol, int topRow) {
-        // Player inventory
-        addSlotBox(playerInventory, 9, leftCol, topRow, 9, 18, 3, 18);
-
-        // Hotbar
-        topRow += 58;
-        addSlotRange(playerInventory, 0, leftCol, topRow, 9, 18);
+    protected void addStandardInventorySlots(Container container, int left, int top) {
+        this.addInventoryExtendedSlots(container, left, top);
+        int hotbarSeparator = 4;
+        int topToHotbar = 58;
+        this.addInventoryHotbarSlots(container, left, top + 58);
     }
 
     @Override

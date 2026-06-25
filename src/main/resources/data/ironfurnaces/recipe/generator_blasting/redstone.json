@@ -1,7 +1,1 @@
-﻿{
-  "type": "ironfurnaces:generator_blasting",
-  "energy": 10000,
-  "ingredient": {
-    "item": "minecraft:redstone"
-  }
-}
+{"type":"ironfurnaces:generator_blasting","energy":10000,"ingredient":"minecraft:redstone"}

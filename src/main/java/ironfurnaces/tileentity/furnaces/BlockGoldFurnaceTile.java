@@ -28,7 +28,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class BlockGoldFurnaceTile extends BlockIronFurnaceTileBase {
     public BlockGoldFurnaceTile(BlockPos pos, BlockState state) {
-        super(Registration.GOLD_FURNACE_TILE.get(), pos, state);
+        super(ironfurnaces.init.Registration.GOLD_FURNACE_TILE.get(), pos, state);
     }
 
     @Override

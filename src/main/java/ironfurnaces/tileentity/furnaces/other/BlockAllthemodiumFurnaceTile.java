@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class BlockAllthemodiumFurnaceTile extends BlockIronFurnaceTileBase {
     public BlockAllthemodiumFurnaceTile(BlockPos pos, BlockState state) {
-        super(Registration.ALLTHEMODIUM_FURNACE_TILE.get(), pos, state);
+        super(ironfurnaces.init.Registration.ALLTHEMODIUM_FURNACE_TILE.get(), pos, state);
     }
 
     @Override

@@ -16,9 +16,9 @@
 
 package ironfurnaces.energy;
 
-import net.neoforged.neoforge.energy.EnergyStorage;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 
-public class FEnergyStorage extends EnergyStorage {
+public class FEnergyStorage extends SimpleEnergyHandler {
 
     public FEnergyStorage(int capacity) {
         super(capacity);
@@ -36,77 +36,73 @@ public class FEnergyStorage extends EnergyStorage {
         super(capacity, maxReceive, maxExtract, energy);
     }
 
-    protected void onEnergyChanged() {
-
+    protected void onEnergyChanged(int previousAmount) {
     }
 
     public int getEnergy() {
-        return this.getEnergyStored();
+        return this.getAmountAsInt();
     }
 
     public int getCapacity() {
-        return this.getMaxEnergyStored();
+        return this.getCapacityAsInt();
     }
 
-    public EnergyStorage setCapacity(int capacity) {
-
+    public FEnergyStorage setCapacity(int capacity) {
+        int previous = this.energy;
         this.capacity = capacity;
-
         if (energy > capacity) {
             energy = capacity;
         }
-        onEnergyChanged();
+        onEnergyChanged(previous);
         return this;
     }
 
-    public EnergyStorage setMaxTransfer(int maxTransfer) {
-
+    public FEnergyStorage setMaxTransfer(int maxTransfer) {
         setMaxReceive(maxTransfer);
         setMaxExtract(maxTransfer);
         return this;
     }
 
-    public EnergyStorage setMaxReceive(int maxReceive) {
-
-        this.maxReceive = maxReceive;
+    public FEnergyStorage setMaxReceive(int maxReceive) {
+        this.maxInsert = maxReceive;
         return this;
     }
 
-    public EnergyStorage setMaxExtract(int maxExtract) {
-
+    public FEnergyStorage setMaxExtract(int maxExtract) {
         this.maxExtract = maxExtract;
         return this;
     }
 
     public int getMaxReceive() {
-
-        return maxReceive;
+        return maxInsert;
     }
 
     public int getMaxExtract() {
-
         return maxExtract;
     }
 
     public void setEnergy(int energy) {
-
-        this.energy = energy;
-
-        if (this.energy > capacity) {
-            this.energy = capacity;
-        } else if (this.energy < 0) {
-            this.energy = 0;
+        if (energy > capacity) {
+            energy = capacity;
+        } else if (energy < 0) {
+            energy = 0;
         }
-        onEnergyChanged();
+        set(energy);
     }
 
-    public void setCapacityDirectly(int capacity)
-    {
+    public void setCapacityDirectly(int capacity) {
         this.capacity = capacity;
     }
 
-    public void setEnergyDirectly(int energy)
-    {
+    public void setEnergyDirectly(int energy) {
         this.energy = energy;
+    }
+
+    public boolean canReceiveEnergy() {
+        return maxInsert > 0;
+    }
+
+    public boolean canExtractEnergy() {
+        return maxExtract > 0;
     }
 }

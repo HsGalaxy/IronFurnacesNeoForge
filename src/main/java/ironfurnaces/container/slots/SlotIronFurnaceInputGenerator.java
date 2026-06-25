@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class SlotIronFurnaceInputGenerator extends Slot {
             }
             if (te.getItem(3).getItem() instanceof ItemAugmentSmoking)
             {
-                if (stack.hasCraftingRemainingItem())
+                if (stack.getCraftingRemainder() != null)
                 {
                     return te.getItem(6).isEmpty() && te.getSmokingBurn(stack) > 0;
                 }
@@ -57,12 +57,12 @@ public class SlotIronFurnaceInputGenerator extends Slot {
             return false;
         }
 
-        return BlockIronFurnaceTileBase.isItemFuel(stack, RecipeType.SMELTING);
+        return BlockIronFurnaceTileBase.isItemFuel(stack, RecipeType.SMELTING, te.getLevel());
     }
 
     @Override
     public ItemStack safeInsert(ItemStack stack, int increment) {
-        if (stack.hasCraftingRemainingItem())
+        if (stack.getCraftingRemainder() != null)
         {
             if (stack.getCount() > 1)
             {

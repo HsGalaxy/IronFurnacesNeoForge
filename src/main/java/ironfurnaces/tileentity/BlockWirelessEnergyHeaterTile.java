@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package ironfurnaces.tileentity;
 
 import ironfurnaces.container.BlockWirelessEnergyHeaterContainer;
 import ironfurnaces.energy.FEnergyStorage;
-import ironfurnaces.init.Registration;
 import ironfurnaces.items.ItemHeater;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Inventory;
@@ -39,12 +37,12 @@ public class BlockWirelessEnergyHeaterTile extends TileEntityInventory {
 
 
     public BlockWirelessEnergyHeaterTile(BlockPos pos, BlockState state) {
-        super(Registration.HEATER_TILE.get(), pos, state, 1);
+        super(ironfurnaces.init.Registration.HEATER_TILE.get(), pos, state, 1);
     }
 
     public FEnergyStorage energyStorage = new FEnergyStorage(1000000, 1000000, 0) {
         @Override
-        protected void onEnergyChanged() {
+        protected void onEnergyChanged(int previousAmount) {
             setChanged();
         }
     };
@@ -85,16 +83,15 @@ public class BlockWirelessEnergyHeaterTile extends TileEntityInventory {
 
 
     @Override
-    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
-        super.loadAdditional(nbt, provider);
-        setEnergy(nbt.getInt("Energy"));
-
+    public void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        setEnergy(input.getIntOr("Energy", getEnergy()));
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
-        super.saveAdditional(nbt, provider);
-        nbt.putInt("Energy", getEnergy());
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt("Energy", getEnergy());
     }
 
     @Override

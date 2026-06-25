@@ -16,14 +16,13 @@
 
 package ironfurnaces.tileentity;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.NonNullList;
+import net.minecraft.core.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Nameable;
@@ -35,6 +34,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 
@@ -52,23 +54,19 @@ public abstract class TileEntityInventory extends BlockEntity implements ITileIn
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
-        CompoundTag tag = new CompoundTag();
-        this.saveAdditional(tag, provider);
-        return tag;
+        ProblemReporter.Collector reporter = new ProblemReporter.Collector();
+        TagValueOutput output = TagValueOutput.createWithContext(reporter, provider);
+        saveAdditional(output);
+        return output.buildResult();
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider holders) {
-        super.handleUpdateTag(tag, holders);
-    }
-
-    @Override
-    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider lookup) {
-        CompoundTag tag = pkt.getTag();
-        loadAdditional(tag, lookup);
+    public void onDataPacket(Connection connection, ValueInput valueInput) {
+        loadAdditional(valueInput);
         setChanged();
-        level.markAndNotifyBlock(worldPosition, level.getChunkAt(worldPosition), level.getBlockState(worldPosition).getBlock().defaultBlockState(), level.getBlockState(worldPosition), 2, 3);
-
+        if (level != null) {
+            level.markAndNotifyBlock(worldPosition, level.getChunkAt(worldPosition), level.getBlockState(worldPosition).getBlock().defaultBlockState(), level.getBlockState(worldPosition), 2, 3);
+        }
     }
 
     @Nullable
@@ -80,24 +78,24 @@ public abstract class TileEntityInventory extends BlockEntity implements ITileIn
 
 
     @Override
-    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
-        super.loadAdditional(nbt, provider);
+    public void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
         this.inventory = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(nbt, this.inventory, provider);
-        if (nbt.contains("CustomName", 8)) {
-            this.name = Component.Serializer.fromJson(nbt.getString("CustomName"), provider);
-        }
+        ContainerHelper.loadAllItems(input, this.inventory);
+        HolderLookup.Provider provider = this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY;
+        input.read("CustomName", ComponentSerialization.CODEC).ifPresent(n -> this.name = n);
     }
-
 
     @Override
-    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
-        super.saveAdditional(nbt, provider);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
         if (this.name != null) {
-            nbt.putString("CustomName", Component.Serializer.toJson(this.name, provider));
+            HolderLookup.Provider provider = this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY;
+            output.store("CustomName", ComponentSerialization.CODEC, this.name);
         }
-        ContainerHelper.saveAllItems(nbt, this.inventory, provider);
+        ContainerHelper.saveAllItems(output, this.inventory);
     }
+
 
 
 

@@ -1,7 +1,1 @@
-﻿{
-  "type": "ironfurnaces:generator_blasting",
-  "energy": 40000,
-  "ingredient": {
-    "item": "minecraft:lapis_lazuli"
-  }
-}
+{"type":"ironfurnaces:generator_blasting","energy":40000,"ingredient":"minecraft:lapis_lazuli"}

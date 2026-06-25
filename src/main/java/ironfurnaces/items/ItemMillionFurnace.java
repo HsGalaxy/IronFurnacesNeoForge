@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,17 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 
 public class ItemMillionFurnace extends BlockItem {
     public ItemMillionFurnace(Block blockIn, Properties builder) {
@@ -48,11 +48,9 @@ public class ItemMillionFurnace extends BlockItem {
 
 
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext pContext, List<Component> tooltip, TooltipFlag pTooltipFlag) {
-
-        tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").append(Component.literal(" (" + ItemFurnace.getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE)));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext pContext, TooltipDisplay tooltipDisplay, Consumer<Component> components, TooltipFlag pTooltipFlag) {
+        components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".cooktime").append(Component.literal(" (" + ItemFurnace.getCooktime(stack) + ")").withStyle(ChatFormatting.BLUE)));
 
         timer++;
         if (timer % 20 == 0) {
@@ -73,20 +71,20 @@ public class ItemMillionFurnace extends BlockItem {
         Format decimal = new DecimalFormat();
         String part1 = Component.translatable("tooltip.ironfurnaces.rainbow_gen1").getString();
         String part2 = Component.translatable("tooltip.ironfurnaces.rainbow_gen2").getString();
-        tooltip.add(Component.literal(part1 + " " + decimal.format(Config.millionFurnacePowerToGenerate.get()).toString().replaceAll("\u00A0", ",") + " " + part2).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.ironfurnaces.rainbow_blowup").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.ITALIC));
+        components.accept(Component.literal(part1 + " " + decimal.format(Config.millionFurnacePowerToGenerate.get()).toString().replaceAll("\u00A0", ",") + " " + part2).withStyle(ChatFormatting.GRAY));
+        components.accept(Component.translatable("tooltip.ironfurnaces.rainbow_blowup").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.ITALIC));
 
 
 
         if (BlockIronFurnaceScreenBase.isShiftKeyDown())
         {
-            tooltip.add(Component.translatable("tooltip.ironfurnaces.rainbow_gen3").withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.translatable("tooltip.ironfurnaces.rainbow_gen4").withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.translatable("tooltip.ironfurnaces.rainbow_gen5").withStyle(ChatFormatting.GRAY));
+            components.accept(Component.translatable("tooltip.ironfurnaces.rainbow_gen3").withStyle(ChatFormatting.GRAY));
+            components.accept(Component.translatable("tooltip.ironfurnaces.rainbow_gen4").withStyle(ChatFormatting.GRAY));
+            components.accept(Component.translatable("tooltip.ironfurnaces.rainbow_gen5").withStyle(ChatFormatting.GRAY));
         }
         else
         {
-            tooltip.add(StringHelper.getShiftInfoText());
+            components.accept(StringHelper.getShiftInfoText());
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,8 +83,8 @@ public class SlotIronFurnaceOutputFactory extends Slot {
 
     @Override
     protected void onQuickCraft(ItemStack stack, int p_75210_2_) {
-        stack.onCraftedBy(this.player.level(), this.player, this.removeCount);
-        if (!this.player.level().isClientSide && this.te instanceof BlockIronFurnaceTileBase) {
+        stack.onCraftedBy(this.player, this.removeCount);
+        if (!this.player.level().isClientSide() && this.te instanceof BlockIronFurnaceTileBase) {
             ((BlockIronFurnaceTileBase)this.te).unlockRecipes((ServerPlayer) this.player);
         }
 
@@ -92,13 +92,13 @@ public class SlotIronFurnaceOutputFactory extends Slot {
     }
 
     protected void checkTakeAchievements(ItemStack stack) {
-        stack.onCraftedBy(this.player.level(), this.player, this.removeCount);
+        stack.onCraftedBy(this.player, this.removeCount);
         if (this.player instanceof ServerPlayer && this.container instanceof BlockIronFurnaceTileBase) {
             ((BlockIronFurnaceTileBase)this.container).unlockRecipes((ServerPlayer)this.player);
         }
 
         this.removeCount = 0;
-        net.neoforged.neoforge.event.EventHooks.firePlayerSmeltedEvent(this.player, stack);
+        net.neoforged.neoforge.event.EventHooks.firePlayerSmeltedEvent(this.player, stack, this.removeCount);
     }
 
 }

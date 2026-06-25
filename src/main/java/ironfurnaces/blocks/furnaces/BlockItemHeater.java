@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
-import java.util.List;
+import java.util.function.Consumer;
 
 public class BlockItemHeater extends BlockItem {
 
@@ -40,31 +39,31 @@ public class BlockItemHeater extends BlockItem {
     }
 
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext pContext, List<Component> tooltip, TooltipFlag pTooltipFlag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> components, TooltipFlag tooltipFlag) {
 
-        if (stack.get(Registration.ENERGY) != null) {
-            tooltip.add(Component.literal(StringHelper.displayEnergy(stack.get(Registration.ENERGY), 1000000).get(0)).withStyle(ChatFormatting.GOLD));
+        Integer energy = stack.get(ironfurnaces.init.Registration.ENERGY);
+        if (energy != null) {
+            components.accept(Component.literal(StringHelper.displayEnergy(energy, 1000000).get(0)).withStyle(ChatFormatting.GOLD));
         }
         if (BlockIronFurnaceScreenBase.isShiftKeyDown()) {
-            tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".heater_block").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
-            tooltip.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".heater_block1").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+            components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".heater_block").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
+            components.accept(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".heater_block1").setStyle(Style.EMPTY.applyFormat((ChatFormatting.GRAY))));
         } else {
-            tooltip.add(StringHelper.getShiftInfoText());
+            components.accept(StringHelper.getShiftInfoText());
         }
     }
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return stack.get(Registration.ENERGY) != null;
+        return stack.get(ironfurnaces.init.Registration.ENERGY) != null;
     }
 
     @Override
     public int getBarWidth(ItemStack stack) {
-        if (stack.get(Registration.ENERGY) != null)
+        if (stack.get(ironfurnaces.init.Registration.ENERGY) != null)
         {
-            int energy = stack.get(Registration.ENERGY);
+            int energy = stack.get(ironfurnaces.init.Registration.ENERGY);
             return (int) ((int)13 * ((double) energy / (double) 1000000));
         }
         return 0;

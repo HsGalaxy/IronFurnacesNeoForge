@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package ironfurnaces.util;
 import ironfurnaces.Config;
 import ironfurnaces.IronFurnaces;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public class FurnaceSettings {
     public int[] settings;
@@ -135,11 +138,11 @@ public class FurnaceSettings {
     }
 
     public void read(CompoundTag tag) {
-        this.settings = tag.getIntArray("Settings");
-        this.autoIO = tag.getIntArray("AutoIO");
-        this.redstoneSettings = tag.getIntArray("Redstone");
-        this.augmentGUI = tag.getInt("AugmentGUI");
-        this.autoSplit = tag.getInt("AutoSplit");
+        tag.getIntArray("Settings").ifPresent(a -> this.settings = a);
+        tag.getIntArray("AutoIO").ifPresent(a -> this.autoIO = a);
+        tag.getIntArray("Redstone").ifPresent(a -> this.redstoneSettings = a);
+        this.augmentGUI = tag.getInt("AugmentGUI").orElse(this.augmentGUI);
+        this.autoSplit = tag.getInt("AutoSplit").orElse(this.autoSplit);
         onChanged();
     }
 
@@ -149,6 +152,21 @@ public class FurnaceSettings {
         tag.putIntArray("Redstone", redstoneSettings);
         tag.putInt("AugmentGUI", augmentGUI);
         tag.putInt("AutoSplit", autoSplit);
+    }
+
+    public void read(ValueInput input) {
+        input.getIntArray("Settings").ifPresent(a -> this.settings = a);
+        input.getIntArray("AutoIO").ifPresent(a -> this.autoIO = a);
+        input.getIntArray("Redstone").ifPresent(a -> this.redstoneSettings = a);
+        input.getInt("AugmentGUI").ifPresent(v -> this.augmentGUI = v);
+        input.getInt("AutoSplit").ifPresent(v -> this.autoSplit = v);
+        onChanged();
+    }
+
+    public void write(ValueOutput output) {
+        CompoundTag tag = new CompoundTag();
+        write(tag);
+        ((TagValueOutput) output).store(tag);
     }
 
     public void onChanged() {

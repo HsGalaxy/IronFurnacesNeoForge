@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 pizzaatime and XenoMustache
+ * Copyright 2025 Astryxion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package ironfurnaces.util;
 
 
-import ironfurnaces.init.Registration;
 import ironfurnaces.tileentity.furnaces.BlockMillionFurnaceTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -35,17 +34,17 @@ public class EventHandler {
     public static void explosionEvent(ExplosionKnockbackEvent event)
     {
 
-        List<BlockPos> list = event.getExplosion().getToBlow();
+        List<BlockPos> list = event.getAffectedBlocks();
         for (BlockPos pos : list)
         {
             Level world = event.getLevel();
             if (world.getBlockEntity(pos) instanceof BlockMillionFurnaceTile)
             {
-                event.getExplosion().getToBlow().remove(pos);
+                event.getAffectedBlocks().remove(pos);
                 world.removeBlockEntity(pos);
                 world.removeBlock(pos, false);
 
-                world.addFreshEntity(new ItemEntity(world, pos.getX(), pos.getY() + 6f, pos.getZ(), new ItemStack(Registration.RAINBOW_COAL.get())));
+                world.addFreshEntity(new ItemEntity(world, pos.getX(), pos.getY() + 6f, pos.getZ(), new ItemStack(ironfurnaces.init.Registration.RAINBOW_COAL.get())));
             }
         }
     }

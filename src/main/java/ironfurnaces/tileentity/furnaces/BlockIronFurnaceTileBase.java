@@ -97,7 +97,8 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     public static final int AUGMENT_BLUE = 5;
     public static final int GENERATOR_FUEL = 6;
     public static final int[] FACTORY_INPUT = new int[]{7, 8, 9, 10, 11, 12};
-    //public Player savedPlayer;
+    public static final int[] FACTORY_OUTPUT = new int[]{13, 14, 15, 16, 17, 18};
+    public static final int[] FACTORY_INPUTOUTPUT = new int[]{7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
 
     public final int[] provides = new int[Direction.values().length];
     protected final int[] lastProvides = new int[this.provides.length];
@@ -122,7 +123,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
 
     public final Object2IntOpenHashMap<ResourceKey<Recipe<?>>> recipes = new Object2IntOpenHashMap<>();
     public RecipeType<? extends AbstractCookingRecipe> recipeType;
-    public FurnaceSettings furnaceSettings;
+    public FurnaceSettings furnaceSettings = new FurnaceSettings();
 
     public FEnergyStorage energyStorage = new FEnergyStorage(Config.furnaceEnergyCapacityTier2.get()) {
         @Override
@@ -149,13 +150,6 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     public BlockIronFurnaceTileBase(BlockEntityType<?> tileentitytypeIn, BlockPos pos, BlockState state) {
         super(tileentitytypeIn, pos, state, 19);
         recipeType = RecipeType.SMELTING;
-        furnaceSettings = new FurnaceSettings() {
-            @Override
-            public void onChanged() {
-                setChanged();
-            }
-        };
-
 
     }
 
@@ -537,7 +531,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         return false;
     }
 
-    // ???????????????? what does this even do
+    // mystery, not even AI can come up with this beauty
     public Map<Integer, Integer> getSplitCounts(int[] slot, int[] input) {
         if (slot.length != input.length) {
             return null;
@@ -610,7 +604,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     }
 
 
-    // whaaat
+    // trust the process
     public void split(boolean fullCheck, int start, int size) {
         ItemStack itemToCheck = ItemStack.EMPTY;
         int fullCheckCount = 0;
@@ -698,6 +692,12 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     }
 
     public static void tick(Level level, BlockPos worldPosition, BlockState blockState, BlockIronFurnaceTileBase e) {
+
+        if (e.furnaceSettings == null)
+        {
+            e.furnaceSettings = new FurnaceSettings();
+        }
+
         if (!e.level.isClientSide()) {
             if (e.isGenerator())
             {
@@ -832,14 +832,6 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
 
         boolean flag1 = false;
         boolean wasBurning = e.isBurning();
-        if (e.furnaceSettings.size() <= 0) {
-            e.furnaceSettings = new FurnaceSettings() {
-                @Override
-                public void onChanged() {
-                    e.setChanged();
-                }
-            };
-        }
         for (int i = 3; i <= 5; i++) {
             if (e.currentAugment[i - 3] != e.getAugment(e.getItem(i))) {
                 e.currentAugment[i - 3] = e.getAugment(e.getItem(i));
@@ -860,8 +852,8 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                 e.totalCookTime = e.getCookTime();
             }
             int mode = e.getRedstoneSetting();
-            if (mode != 0) {
-                if (mode == 2) {
+            if (mode != FurnaceSettings.REDSTONE_IGNORED) {
+                if (mode == FurnaceSettings.REDSTONE_LOW) {
                     int i = 0;
                     for (Direction side : Direction.values()) {
                         if (level.getSignal(worldPosition.relative(side), side) > 0) {
@@ -875,7 +867,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                         return;
                     }
                 }
-                if (mode == 1) {
+                if (mode == FurnaceSettings.REDSTONE_HIGH) {
                     boolean flag = false;
                     for (Direction side : Direction.values()) {
 
@@ -918,7 +910,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                 e.checkRecipeType();
                 int start = e.getTier() == 0 ? 2 : e.getTier() == 1 ? 1 : 0;
                 int size = e.getTier() == 0 ? 4 : e.getTier() == 1 ? 5 : 6;
-                if (e.isAutoSplit()) {
+                if (e.isAutoSplit() && e.canAutoSplitWork()) {
                     e.split(false, start, size);
                 }
                 for (int i = start; i < size; i++) {
@@ -949,7 +941,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                     }
                                     e.usedRF[i] = 0;
                                     e.factoryTotalCookTime[i] = e.getFactoryCookTime(slot);
-                                    if (e.isAutoSplit()) {
+                                    if (e.isAutoSplit() && e.canAutoSplitWork()) {
                                         e.split(true, start, size);
                                     }
                                     e.factorySmelt(irecipe, slot);
@@ -1271,7 +1263,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             if (tile == null) {
                 continue;
             }
-            if (furnaceSettings.get(dir.ordinal()) == 2 || furnaceSettings.get(dir.ordinal()) == 3) {
+            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                 EnergyHandler other = level.getCapability(Capabilities.Energy.BLOCK, tile.getBlockPos(), dir.getOpposite());
                 if (other == null) {
                     continue;
@@ -1302,7 +1294,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             if (tile == null) {
                 continue;
             }
-            if (furnaceSettings.get(dir.ordinal()) == 2 || furnaceSettings.get(dir.ordinal()) == 3) {
+            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                 EnergyHandler other = level.getCapability(Capabilities.Energy.BLOCK, tile.getBlockPos(), dir.getOpposite());
                 if (other == null) {
                     continue;
@@ -1336,7 +1328,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             if (tile == null) {
                 continue;
             }
-            if (furnaceSettings.get(dir.ordinal()) == 1 || furnaceSettings.get(dir.ordinal()) == 2 || furnaceSettings.get(dir.ordinal()) == 3 || furnaceSettings.get(dir.ordinal()) == 4) {
+            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT || furnaceSettings.getSideSetting(dir) == OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.FUEL_INPUT) {
                 if (tile != null) {
                     ResourceHandler<ItemResource> other = level.getCapability(Capabilities.Item.BLOCK, tile.getBlockPos(), dir.getOpposite());
 
@@ -1344,9 +1336,9 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                         continue;
                     }
                     if (other != null) {
-                        if (this.getAutoInput() != 0 || this.getAutoOutput() != 0) {
-                            if (this.getAutoInput() == 1) {
-                                if (furnaceSettings.get(dir.ordinal()) == 1 || furnaceSettings.get(dir.ordinal()) == 3) {
+                        if (this.getAutoInput()|| this.getAutoOutput()) {
+                            if (this.getAutoInput()) {
+                                if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                                     if (this.getItem(INPUT).getCount() >= this.getItem(INPUT).getMaxStackSize()) {
                                         continue;
                                     }
@@ -1360,7 +1352,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                         }
                                     }
                                 }
-                                if (furnaceSettings.get(dir.ordinal()) == 4) {
+                                if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.FUEL_INPUT) {
                                     if (this.getItem(FUEL).getCount() >= this.getItem(FUEL).getMaxStackSize()) {
                                         continue;
                                     }
@@ -1378,8 +1370,8 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                     }
                                 }
                             }
-                            if (this.getAutoOutput() == 1) {
-                                if (furnaceSettings.get(dir.ordinal()) == 4) {
+                            if (this.getAutoOutput()) {
+                                if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.FUEL_INPUT) {
                                     if (this.getItem(FUEL).isEmpty()) {
                                         continue;
                                     }
@@ -1398,7 +1390,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                     }
                                 }
 
-                                if (furnaceSettings.get(dir.ordinal()) == 2 || furnaceSettings.get(dir.ordinal()) == 3) {
+                                if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                                     if (this.getItem(OUTPUT).isEmpty()) {
                                         continue;
                                     }
@@ -1428,7 +1420,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             if (tile == null) {
                 continue;
             }
-            if (furnaceSettings.get(dir.ordinal()) == 4) {
+            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.FUEL_INPUT) {
                 if (tile != null) {
                     ResourceHandler<ItemResource> other = level.getCapability(Capabilities.Item.BLOCK, tile.getBlockPos(), dir.getOpposite());
 
@@ -1436,8 +1428,8 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                         continue;
                     }
                     if (other != null) {
-                        if (this.getAutoInput() != 0) {
-                            if (furnaceSettings.get(dir.ordinal()) == 4) {
+                        if (this.getAutoInput()) {
+                            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.FUEL_INPUT) {
                                 if (this.getItem(GENERATOR_FUEL).getCount() >= this.getItem(GENERATOR_FUEL).getMaxStackSize()) {
                                     continue;
                                 }
@@ -1469,9 +1461,9 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                                 }
                             }
                         }
-                        if (this.getAutoOutput() != 0)
+                        if (this.getAutoOutput())
                         {
-                            if (furnaceSettings.get(dir.ordinal()) == 4)
+                            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.FUEL_INPUT)
                             {
                                 if (this.getItem(GENERATOR_FUEL).isEmpty()) {
                                     continue;
@@ -1502,7 +1494,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             if (tile == null) {
                 continue;
             }
-            if (furnaceSettings.get(dir.ordinal()) == 1 || furnaceSettings.get(dir.ordinal()) == 2 || furnaceSettings.get(dir.ordinal()) == 3) {
+            if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                 if (tile != null) {
                     ResourceHandler<ItemResource> other = level.getCapability(Capabilities.Item.BLOCK, tile.getBlockPos(), dir.getOpposite());
 
@@ -1510,9 +1502,9 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                         continue;
                     }
                     if (other != null) {
-                        if (this.getAutoInput() != 0 || this.getAutoOutput() != 0) {
-                            if (this.getAutoInput() == 1) {
-                                if (furnaceSettings.get(dir.ordinal()) == 1 || furnaceSettings.get(dir.ordinal()) == 3) {
+                        if (this.getAutoInput() || this.getAutoOutput()) {
+                            if (this.getAutoInput()) {
+                                if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                                     int start = getTier() == 0 ? 2 : getTier() == 1 ? 1 : 0;
                                     int size = getTier() == 0 ? 4 : getTier() == 1 ? 5 : 6;
 
@@ -1533,9 +1525,9 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
 
                                 }
                             }
-                            if (this.getAutoOutput() == 1) {
+                            if (this.getAutoOutput()) {
 
-                                if (furnaceSettings.get(dir.ordinal()) == 2 || furnaceSettings.get(dir.ordinal()) == 3) {
+                                if (furnaceSettings.getSideSetting(dir) == FurnaceSettings.OUTPUT || furnaceSettings.getSideSetting(dir) == FurnaceSettings.INPUT_OUTPUT) {
                                     int start = getTier() == 0 ? 2 : getTier() == 1 ? 1 : 0;
                                     int size = getTier() == 0 ? 4 : getTier() == 1 ? 5 : 6;
                                     for (int j = start; j < size; j++) {
@@ -1631,111 +1623,111 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         }
     }
 
+    private boolean canAutoSplitWork()
+    {
+       return !(this instanceof BlockMillionFurnaceTile) && !(this instanceof BlockAllthemodiumFurnaceTile) && !(this instanceof BlockVibraniumFurnaceTile) && !(this instanceof BlockUnobtainiumFurnaceTile);
+    }
+
     //CLIENT SYNC
 
     public boolean isAutoSplit() {
-        return furnaceSettings.autoSplit == 1;
+        return furnaceSettings.getAutoSplitSetting();
     }
 
     public int getSettingBottom() {
-        return furnaceSettings.get(0);
+        return furnaceSettings.getSideSetting(Direction.DOWN);
     }
 
     public int getSettingTop() {
-        return furnaceSettings.get(1);
+        return furnaceSettings.getSideSetting(Direction.UP);
     }
 
     public int getSettingFront() {
-        int i = DirectionUtil.getId(this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING));
-        return furnaceSettings.get(i);
+        Direction front = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+        return furnaceSettings.getSideSetting(front);
     }
 
     public int getSettingBack() {
-        int i = DirectionUtil.getId(this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite());
-        return furnaceSettings.get(i);
+        Direction back = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite();
+        return furnaceSettings.getSideSetting(back);
     }
 
     public int getSettingLeft() {
         Direction facing = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
         if (facing == Direction.NORTH) {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.EAST));
+            return furnaceSettings.getSideSetting(Direction.EAST);
         } else if (facing == Direction.WEST) {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.NORTH));
+            return furnaceSettings.getSideSetting(Direction.NORTH);
         } else if (facing == Direction.SOUTH) {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.WEST));
+            return furnaceSettings.getSideSetting(Direction.WEST);
         } else {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.SOUTH));
+            return furnaceSettings.getSideSetting(Direction.SOUTH);
         }
     }
 
     public int getSettingRight() {
         Direction facing = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
         if (facing == Direction.NORTH) {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.WEST));
+            return furnaceSettings.getSideSetting(Direction.WEST);
         } else if (facing == Direction.WEST) {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.SOUTH));
+            return furnaceSettings.getSideSetting(Direction.SOUTH);
         } else if (facing == Direction.SOUTH) {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.EAST));
+            return furnaceSettings.getSideSetting(Direction.EAST);
         } else {
-            return furnaceSettings.get(DirectionUtil.getId(Direction.NORTH));
+            return furnaceSettings.getSideSetting(Direction.NORTH);
         }
     }
 
-    public int getIndexFront() {
-        int i = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING).ordinal();
-        return i;
+    public Direction getFrontDirection() {
+        return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
     }
 
-    public int getIndexBack() {
-        int i = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite().ordinal();
-        return i;
+    public Direction getBackDirection() {
+        return this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite();
     }
 
-    public int getIndexLeft() {
+    public Direction getLeftDirection() {
         Direction facing = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
         if (facing == Direction.NORTH) {
-            return Direction.EAST.ordinal();
+            return Direction.EAST;
         } else if (facing == Direction.WEST) {
-            return Direction.NORTH.ordinal();
+            return Direction.NORTH;
         } else if (facing == Direction.SOUTH) {
-            return Direction.WEST.ordinal();
+            return Direction.WEST;
         } else {
-            return Direction.SOUTH.ordinal();
+            return Direction.SOUTH;
         }
     }
 
-    public int getIndexRight() {
+    public Direction getRightDirection() {
         Direction facing = this.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
         if (facing == Direction.NORTH) {
-            return Direction.WEST.ordinal();
+            return Direction.WEST;
         } else if (facing == Direction.WEST) {
-            return Direction.SOUTH.ordinal();
+            return Direction.SOUTH;
         } else if (facing == Direction.SOUTH) {
-            return Direction.EAST.ordinal();
+            return Direction.EAST;
         } else {
-            return Direction.NORTH.ordinal();
+            return Direction.NORTH;
         }
     }
 
-    public int getAutoInput() {
-        return furnaceSettings.get(6);
+    public boolean getAutoInput() {
+        return furnaceSettings.getAutoInputSetting();
     }
 
-    public int getAugmentGUI() {
-        return furnaceSettings.get(10);
+    public boolean getAutoOutput() {
+        return furnaceSettings.getAutoOutputSetting();
     }
 
-    public int getAutoOutput() {
-        return furnaceSettings.get(7);
+    public boolean getAugmentGUI() {
+        return furnaceSettings.getShowAugmentGUISetting();
     }
 
     public int getRedstoneSetting() {
-        return furnaceSettings.get(8);
+        return furnaceSettings.getRedstoneSetting();
     }
 
-    public int getRedstoneComSub() {
-        return furnaceSettings.get(9);
-    }
 
 
     protected int getStateType() {
@@ -1760,11 +1752,11 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         if (this instanceof BlockMillionFurnaceTile) {
             smeltItemMult(recipe, 64);
         } else if (this instanceof BlockAllthemodiumFurnaceTile) {
-            smeltItemMult(recipe, Config.allthemodiumFurnaceSmeltMult.get());
+            smeltItemMult(recipe, Math.min(64, Config.allthemodiumFurnaceSmeltMult.get()));
         } else if (this instanceof BlockVibraniumFurnaceTile) {
-            smeltItemMult(recipe, Config.vibraniumFurnaceSmeltMult.get());
+            smeltItemMult(recipe, Math.min(64, Config.vibraniumFurnaceSmeltMult.get()));
         } else if (this instanceof BlockUnobtainiumFurnaceTile) {
-            smeltItemMult(recipe, Config.unobtainiumFurnaceSmeltMult.get());
+            smeltItemMult(recipe, Math.min(64, Config.unobtainiumFurnaceSmeltMult.get()));
         } else {
             smeltItem(recipe);
         }
@@ -1774,11 +1766,11 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         if (this instanceof BlockMillionFurnaceTile) {
             smeltFactoryItemMult(recipe, slot, 64);
         } else if (this instanceof BlockAllthemodiumFurnaceTile) {
-            smeltFactoryItemMult(recipe, slot, Config.allthemodiumFurnaceSmeltMult.get());
+            smeltFactoryItemMult(recipe, slot, Math.min(64, Config.allthemodiumFurnaceSmeltMult.get()));
         } else if (this instanceof BlockVibraniumFurnaceTile) {
-            smeltFactoryItemMult(recipe, slot, Config.vibraniumFurnaceSmeltMult.get());
+            smeltFactoryItemMult(recipe, slot, Math.min(64, Config.vibraniumFurnaceSmeltMult.get()));
         } else if (this instanceof BlockUnobtainiumFurnaceTile) {
-            smeltFactoryItemMult(recipe, slot, Config.unobtainiumFurnaceSmeltMult.get());
+            smeltFactoryItemMult(recipe, slot, Math.min(64, Config.unobtainiumFurnaceSmeltMult.get()));
         } else {
             smeltFactoryItem(recipe, slot);
         }
@@ -2016,30 +2008,30 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     @Override
     public int[] IgetSlotsForFace(Direction side) {
         if (isFurnace()) {
-            if (furnaceSettings.get(DirectionUtil.getId(side)) == 0) {
+            if (furnaceSettings.getSideSetting(side) == FurnaceSettings.NONE) {
                 return new int[]{};
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 1) {
-                return new int[]{0, 1};
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 2) {
-                return new int[]{2};
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 3) {
-                return new int[]{0, 1, 2};
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 4) {
-                return new int[]{1};
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.INPUT) {
+                return new int[]{INPUT, FUEL};
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.OUTPUT) {
+                return new int[]{OUTPUT};
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.INPUT_OUTPUT) {
+                return new int[]{INPUT, FUEL, OUTPUT};
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.FUEL_INPUT) {
+                return new int[]{FUEL};
             }
         } else if (isGenerator()) {
-            if (furnaceSettings.get(DirectionUtil.getId(side)) == 4) {
-                return new int[]{6};
+            if (furnaceSettings.getSideSetting(side) == FurnaceSettings.FUEL_INPUT) {
+                return new int[]{GENERATOR_FUEL};
             }
         } else if (isFactory()) {
-            if (furnaceSettings.get(DirectionUtil.getId(side)) == 0) {
+            if (furnaceSettings.getSideSetting(side) == FurnaceSettings.NONE) {
                 return new int[]{};
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 1) {
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.INPUT) {
                 return FACTORY_INPUT;
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 2) {
-                return new int[]{13, 14, 15, 16, 17, 18};
-            } else if (furnaceSettings.get(DirectionUtil.getId(side)) == 3) {
-                return new int[]{7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.OUTPUT) {
+                return FACTORY_OUTPUT;
+            } else if (furnaceSettings.getSideSetting(side) == FurnaceSettings.INPUT_OUTPUT) {
+                return FACTORY_INPUTOUTPUT;
             }
         }
 
@@ -2049,27 +2041,27 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     @Override
     public boolean IcanExtractItem(int index, ItemStack stack, Direction direction) {
         if (isFurnace()) {
-            if (furnaceSettings.get(DirectionUtil.getId(direction)) == 0) {
+            if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.NONE) {
                 return false;
-            } else if (furnaceSettings.get(DirectionUtil.getId(direction)) == 1) {
+            } else if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.INPUT) {
                 return false;
-            } else if (furnaceSettings.get(DirectionUtil.getId(direction)) == 2) {
-                return index == 2;
-            } else if (furnaceSettings.get(DirectionUtil.getId(direction)) == 3) {
-                return index == 2;
-            } else if (furnaceSettings.get(DirectionUtil.getId(direction)) == 4 && stack.getItem() != Items.BUCKET) {
+            } else if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.OUTPUT) {
+                return index == OUTPUT;
+            } else if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.INPUT_OUTPUT) {
+                return index == OUTPUT;
+            } else if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.FUEL_INPUT && stack.getItem() != Items.BUCKET) {
                 return false;
-            } else if (furnaceSettings.get(DirectionUtil.getId(direction)) == 4 && stack.getItem() == Items.BUCKET) {
+            } else if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.FUEL_INPUT && stack.getItem() == Items.BUCKET) {
                 return true;
             }
         } else if (isGenerator()) {
-            if (furnaceSettings.get(DirectionUtil.getId(direction)) == 4 && stack.getItem() == Items.BUCKET) {
+            if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.FUEL_INPUT && stack.getItem() == Items.BUCKET) {
                 return true;
             }
         } else if (isFactory()) {
-            if (furnaceSettings.get(DirectionUtil.getId(direction)) == 2) {
+            if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.OUTPUT) {
                 return index >= 13 && index <= 18;
-            } else if (furnaceSettings.get(DirectionUtil.getId(direction)) == 3) {
+            } else if (furnaceSettings.getSideSetting(direction) == FurnaceSettings.INPUT_OUTPUT) {
                 return index >= 13 && index <= 18;
             }
         }
@@ -2079,7 +2071,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     @Override
     public boolean IisItemValidForSlot(int index, ItemStack stack) {
         if (isFurnace()) {
-            if (index == OUTPUT || index == 3 || index == 4 || index == 5) {
+            if (index == OUTPUT || index == AUGMENT_RED || index == AUGMENT_GREEN || index == AUGMENT_BLUE) {
                 return false;
             }
             if (index == INPUT) {
@@ -2110,7 +2102,7 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
                 }
             }
         } else if (isFactory()) {
-            if ((index >= 13 && index <= 18) || index == 3 || index == 4 || index == 5) {
+            if ((index >= 13 && index <= 18) || index == AUGMENT_RED || index == AUGMENT_GREEN || index == AUGMENT_BLUE) {
                 return false;
             }
             if (index >= 7 && index <= 12) {
@@ -2157,16 +2149,6 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         }
     }
 
-
-    public int getXpNeededForLevel(int level)
-    {
-        int xp = 0;
-        for (int i = 0; i < level; i++)
-        {
-            xp += getXpNeededForNextLevel(i);
-        }
-        return xp + 1;
-    }
 
     @Override
     public void setRecipeUsed(@Nullable RecipeHolder<?> recipe) {
@@ -2240,11 +2222,11 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     public void placeConfig() {
 
         if (furnaceSettings != null) {
-            furnaceSettings.set(0, 2);
-            furnaceSettings.set(1, 1);
+            furnaceSettings.setSideSetting(Direction.DOWN, 2);
+            furnaceSettings.setSideSetting(Direction.UP, 1);
             for (Direction dir : Direction.values()) {
                 if (dir != Direction.DOWN && dir != Direction.UP) {
-                    furnaceSettings.set(dir.ordinal(), 4);
+                    furnaceSettings.setSideSetting(dir, 4);
                 }
             }
             level.markAndNotifyBlock(worldPosition, level.getChunkAt(worldPosition), level.getBlockState(worldPosition).getBlock().defaultBlockState(), level.getBlockState(worldPosition), 3, 3);

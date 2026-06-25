@@ -22,9 +22,9 @@ import ironfurnaces.IronFurnaces;
 import ironfurnaces.capability.ClientShowConfig;
 import ironfurnaces.container.furnaces.BlockIronFurnaceContainerBase;
 import ironfurnaces.items.ItemMillionFurnace;
-import ironfurnaces.network.Messages;
-import ironfurnaces.network.PacketFurnaceSettings;
-import ironfurnaces.network.PacketShowConfig;
+import ironfurnaces.network.*;
+import ironfurnaces.util.DirectionUtil;
+import ironfurnaces.util.FurnaceSettings;
 import ironfurnaces.util.StringHelper;
 import ironfurnaces.util.gui.FurnaceGuiButton;
 import ironfurnaces.util.gui.FurnaceGuiEnergy;
@@ -34,10 +34,12 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import org.lwjgl.glfw.GLFW;
 
@@ -78,25 +80,15 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
     public FurnaceGuiButton redstoneIgnoredButton;
     public FurnaceGuiButton redstoneLowButton;
     public FurnaceGuiButton redstoneHighButton;
-    public FurnaceGuiButton comparatorButton;
-    public FurnaceGuiButton comparatorSubButton;
-    public FurnaceGuiButton addButton;
-    public FurnaceGuiButton subButton;
-
     public FurnaceGuiEnergy energyBar;
 
     private int timer;
     private Random rand = new Random();
 
-    int titleX;
-    int titleY;
-
     public BlockIronFurnaceScreenBase(T t, Inventory inv, Component name) {
         super(t, inv, name);
         playerInv = inv;
         this.name = name;
-        this.titleX = 49; //this.getImageWidth() / 2 - this.minecraft.font.width(name.getString()) / 2
-        this.titleY = 6;
     }
 
 
@@ -107,24 +99,20 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
         super.init();
         int left = getLeftPos();
         int top = getTopPos();
-        energyBar = new FurnaceGuiEnergy(left, top, 109, 22, 14, 42, 176, 14);
-        autoSplitButton = new FurnaceGuiButton(left, top, 9, 56, 14, 14,112, 189);
+        energyBar = new FurnaceGuiEnergy(left, top, 109, 22, 14, 42, 0, 0);
+        autoSplitButton = new FurnaceGuiButton(left, top, 9, 56, 14, 14,70, 132);
         augmentButton = new FurnaceGuiButton(left, top, 161, 4, 11, 11);
-        autoInputButton = new FurnaceGuiButton(left, top, -47, 12, 14, 14, 0, 189);
-        autoOutputButton = new FurnaceGuiButton(left, top, -29, 12, 14, 14, 14, 189);
-        redstoneIgnoredButton = new FurnaceGuiButton(left, top, -47, 70, 14, 14, 28, 189);
-        redstoneLowButton = new FurnaceGuiButton(left, top, -31, 70, 14, 14, 84, 189, 98, 189, 98, 189);
-        redstoneHighButton = new FurnaceGuiButton(left, top, -31, 70, 14, 14, 42, 189);
-        comparatorButton = new FurnaceGuiButton(left, top, -15, 70, 14, 14, 56, 189);
-        comparatorSubButton = new FurnaceGuiButton(left, top, -47, 86, 14, 14, 70, 189);
-        addButton = new FurnaceGuiButton(left, top, -31, 86, 14, 14, 0, 14, 14, 14, 28, 14);
-        subButton = new FurnaceGuiButton(left, top, -31, 86, 14, 14, 0, 0, 14, 0, 28, 0);
-        sideButtons.add(bottomButton = new FurnaceGuiButton(left, top, -32,  55, 10, 10));
-        sideButtons.add(topButton = new FurnaceGuiButton(left, top, -32,  31, 10, 10));
-        sideButtons.add(frontButton = new FurnaceGuiButton(left, top, -32,  43, 10, 10));
-        sideButtons.add(backButton = new FurnaceGuiButton(left, top, -20,  55, 10, 10));
-        sideButtons.add(leftButton = new FurnaceGuiButton(left, top, -44,  43, 10, 10));
-        sideButtons.add(rightButton = new FurnaceGuiButton(left, top, -20,  43, 10, 10));
+        autoInputButton = new FurnaceGuiButton(left, top, -47, 8, 14, 14, 0, 132);
+        autoOutputButton = new FurnaceGuiButton(left, top, -29, 8, 14, 14, 14, 132);
+        redstoneIgnoredButton = new FurnaceGuiButton(left, top, -47, 66, 14, 14, 28, 132);
+        redstoneLowButton = new FurnaceGuiButton(left, top, -31, 66, 14, 14, 42, 132);
+        redstoneHighButton = new FurnaceGuiButton(left, top, -15, 66, 14, 14, 56, 132);
+        sideButtons.add(bottomButton = new FurnaceGuiButton(left, top, -32,  51, 10, 10));
+        sideButtons.add(topButton = new FurnaceGuiButton(left, top, -32,  27, 10, 10));
+        sideButtons.add(frontButton = new FurnaceGuiButton(left, top, -32,  39, 10, 10));
+        sideButtons.add(backButton = new FurnaceGuiButton(left, top, -20,  51, 10, 10));
+        sideButtons.add(leftButton = new FurnaceGuiButton(left, top, -44,  39, 10, 10));
+        sideButtons.add(rightButton = new FurnaceGuiButton(left, top, -20,  39, 10, 10));
     }
 
 
@@ -184,11 +172,6 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
 
         graphics.text(font, this.playerInventoryTitle, 8, imageHeight - 93, -12566464, false);
 
-        if (showInventoryButtons() && this.getMenu().getRedstoneMode() == 4) {
-            int comSub = this.getMenu().getComSub();
-            int i = comSub > 9 ? 28 : 31;
-            graphics.text(font, Component.literal("" + comSub), i - 42, 90, -12566464, false);
-        }
 
 
         this.addTooltips(graphics, actualMouseX, actualMouseY);
@@ -211,12 +194,12 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
 
 
         if (!showInventoryButtons()) {
-            if (mouseX >= -20 && mouseX <= 0 && mouseY >= 4 && mouseY <= 26) {
+            if (mouseX >= -16 && mouseX <= 0 && mouseY >= 0 && mouseY <= 16) {
                 graphics.setTooltipForNextFrame(font, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_open"), tooltipX, tooltipY);
             }
         } else {
-            if (mouseX >= -13 && mouseX <= 0 && mouseY >= 4 && mouseY <= 26) {
-                graphics.setComponentTooltipForNextFrame(font, StringHelper.getShiftInfoGui(), tooltipX, tooltipY);
+            if (mouseX >= -12 && mouseX <= -1 && mouseY >= 6 && mouseY <= 17) {
+                graphics.setTooltipForNextFrame(font, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_close"), tooltipX, tooltipY);
             }
             List<Component> list = Lists.newArrayList();
             list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_auto_input"));
@@ -228,37 +211,36 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
             autoOutputButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             list = Lists.newArrayList();
             list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_top"));
-            list.add(this.getMenu().getTooltip(Direction.UP.ordinal()));
+            list.add(this.getMenu().getTooltip(Direction.UP));
             topButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             list = Lists.newArrayList();
             list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_bottom"));
-            list.add(this.getMenu().getTooltip(Direction.DOWN.ordinal()));
+            list.add(this.getMenu().getTooltip(Direction.DOWN));
             bottomButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             list = Lists.newArrayList();
             if (isShiftKeyDown()) {
                 list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_reset"));
             } else {
                 list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_front"));
-                list.add(this.getMenu().getTooltip(getMenu().getIndexFront()));
+                list.add(this.getMenu().getTooltip(getMenu().getFrontDirection()));
             }
             frontButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             list = Lists.newArrayList();
             list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_back"));
-            list.add(this.getMenu().getTooltip(getMenu().getIndexBack()));
+            list.add(this.getMenu().getTooltip(getMenu().getBackDirection()));
             backButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             list = Lists.newArrayList();
             list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_left"));
-            list.add(this.getMenu().getTooltip(getMenu().getIndexLeft()));
+            list.add(this.getMenu().getTooltip(getMenu().getLeftDirection()));
             leftButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             list = Lists.newArrayList();
             list.add(Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_right"));
-            list.add(this.getMenu().getTooltip(getMenu().getIndexRight()));
+            list.add(this.getMenu().getTooltip(getMenu().getRightDirection()));
             rightButton.renderComponentTooltip(font, graphics, list, tooltipX, tooltipY, mouseX, mouseY, true);
             redstoneIgnoredButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_ignored"), tooltipX, tooltipY, mouseX, mouseY, true);
-            redstoneLowButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_low"), tooltipX, tooltipY, mouseX, mouseY, isShiftKeyDown());
-            redstoneHighButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_high"), tooltipX, tooltipY, mouseX, mouseY, !isShiftKeyDown());
-            comparatorButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_comparator"), tooltipX, tooltipY, mouseX, mouseY, true);
-            comparatorSubButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_comparator_sub"), tooltipX, tooltipY, mouseX, mouseY, true);
+            redstoneLowButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_low"), tooltipX, tooltipY, mouseX, mouseY, true);
+            redstoneHighButton.renderTooltip(font, graphics, Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_redstone_high"), tooltipX, tooltipY, mouseX, mouseY, true);
+
         }
     }
 
@@ -314,7 +296,7 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
                 i = this.getMenu().getGeneratorBurnScaled(13);
                 matrix.blit(RenderPipelines.GUI_TEXTURED, GUI_GENERATOR, getLeftPos() + 56, getTopPos() + 23 + 12 - i, 176, 12 - i, 14, i + 1, 256, 256);
             }
-            energyBar.render(GUI_GENERATOR, matrix, getMenu().getEnergyScaled(42));
+            energyBar.render(matrix, getMenu().getEnergyScaled(42));
         }
     }
 
@@ -324,8 +306,7 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
         {
             addSlots(matrix, this.getMenu().getTier());
             energyBar.changePos(9, 7, true);
-            energyBar.changeUV(176, 22, true);
-            energyBar.render(GUI_FACTORY, matrix, getMenu().getEnergyScaled(42));
+            energyBar.render(matrix, getMenu().getEnergyScaled(42));
 
             int i;
             for (int j = 0; j < getMenu().getFactoryCooktimeSize(); j++)
@@ -385,27 +366,18 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
 
     private void addRedstoneButtons(GuiGraphicsExtractor matrix, int mouseX, int mouseY) {
         if (showInventoryButtons()) {
-            boolean flag = isShiftKeyDown();
             int setting = this.getMenu().getRedstoneMode();
-            if (setting == 0) redstoneIgnoredButton.render(WIDGETS, matrix, mouseX, mouseY, true);
-            if (flag) redstoneLowButton.render(WIDGETS, matrix, mouseX, mouseY, setting == 2);
-            if (!flag) redstoneHighButton.render(WIDGETS, matrix, mouseX, mouseY, setting == 1);
-            if (setting == 3) comparatorButton.render(WIDGETS, matrix, mouseX, mouseY, true);
-            if (setting == 4) {
-                comparatorSubButton.render(WIDGETS, matrix, mouseX, mouseY, true);
-                int comSub = getMenu().getComSub();
-                addButton.render(WIDGETS, matrix, mouseX, mouseY, comSub == 15);
-                if (flag)
-                    subButton.render(WIDGETS, matrix, mouseX, mouseY, comSub == 0);
-            }
+            redstoneIgnoredButton.render(WIDGETS, matrix, mouseX, mouseY, setting == FurnaceSettings.REDSTONE_IGNORED);
+            redstoneLowButton.render(WIDGETS, matrix, mouseX, mouseY, setting == FurnaceSettings.REDSTONE_LOW);
+            redstoneHighButton.render(WIDGETS, matrix, mouseX, mouseY, setting == FurnaceSettings.REDSTONE_HIGH);
         }
     }
 
     private void addInventoryButtons(GuiGraphicsExtractor matrix, int mouseX, int mouseY) {
         if (!showInventoryButtons()) {
-            matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() - 20, getTopPos() + 4, 0, 28, 23, 26, 256, 256);
+            matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() - 13, getTopPos() + 2, 0, 0, 12, 13, 256, 256);
         } else if (showInventoryButtons()) {
-            matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() - 56, getTopPos() + 4, 0, 54, 59, 107, 256, 256);
+            matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() - 56, getTopPos(), 0, 13, 60, 91, 256, 256);
             autoInputButton.render(WIDGETS, matrix, mouseX, mouseY, getMenu().getAutoInput());
             autoOutputButton.render(WIDGETS, matrix, mouseX, mouseY, getMenu().getAutoOutput());
             this.blitIO(matrix, mouseX, mouseY);
@@ -432,7 +404,7 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
                 continue;
 
             FurnaceGuiButton button = sideButtons.get(i);
-            button.changeEnabledUV((10 * (settings[i])) - 10, 161);
+            button.changeEnabledUV((10 * (settings[i])) - 10, 104);
             button.render(WIDGETS, matrix, mouseX, mouseY, true);
 
         }
@@ -457,20 +429,20 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
         if (input || both) {
             if (getMenu().getIsFurnace())
             {
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 55, getTopPos() + 16, 0, 171, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 55, getTopPos() + 16, 0, 114, 18, 18, 256, 256);
             }
             if (getMenu().getIsFactory())
             {
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 69, getTopPos() + 5, 0, 171, 18, 18, 256, 256);
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 90, getTopPos() + 5, 0, 171, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 69, getTopPos() + 5, 0, 114, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 90, getTopPos() + 5, 0, 114, 18, 18, 256, 256);
                 if (getMenu().getTier() > 0)
                 {
-                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 48, getTopPos() + 5, 0, 171, 18, 18, 256, 256);
-                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 111, getTopPos() + 5, 0, 171, 18, 18, 256, 256);
+                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 48, getTopPos() + 5, 0, 114, 18, 18, 256, 256);
+                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 111, getTopPos() + 5, 0, 114, 18, 18, 256, 256);
                     if (getMenu().getTier() > 1)
                     {
-                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 27, getTopPos() + 5, 0, 171, 18, 18, 256, 256);
-                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 132, getTopPos() + 5, 0, 171, 18, 18, 256, 256);
+                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 27, getTopPos() + 5, 0, 114, 18, 18, 256, 256);
+                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 132, getTopPos() + 5, 0, 114, 18, 18, 256, 256);
                     }
                 }
             }
@@ -480,20 +452,20 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
         if (output || both) {
             if (getMenu().getIsFurnace())
             {
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 111, getTopPos() + 30, 0, 203, 26, 26, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 111, getTopPos() + 30, 0, 146, 26, 26, 256, 256);
             }
             if (getMenu().getIsFactory())
             {
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 69, getTopPos() + 54, 36, 171, 18, 18, 256, 256);
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 90, getTopPos() + 54, 36, 171, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 69, getTopPos() + 54, 36, 114, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 90, getTopPos() + 54, 36, 114, 18, 18, 256, 256);
                 if (getMenu().getTier() > 0)
                 {
-                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 48, getTopPos() + 54, 36, 171, 18, 18, 256, 256);
-                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 111, getTopPos() + 54, 36, 171, 18, 18, 256, 256);
+                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 48, getTopPos() + 54, 36, 114, 18, 18, 256, 256);
+                    matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 111, getTopPos() + 54, 36, 114, 18, 18, 256, 256);
                     if (getMenu().getTier() > 1)
                     {
-                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 27, getTopPos() + 54, 36, 171, 18, 18, 256, 256);
-                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 132, getTopPos() + 54, 36, 171, 18, 18, 256, 256);
+                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 27, getTopPos() + 54, 36, 114, 18, 18, 256, 256);
+                        matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 132, getTopPos() + 54, 36, 114, 18, 18, 256, 256);
                     }
                 }
             }
@@ -501,11 +473,11 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
         if (fuel) {
             if (getMenu().getIsFurnace())
             {
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 55, getTopPos() + 52, 18, 171, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 55, getTopPos() + 52, 18, 114, 18, 18, 256, 256);
             }
             if (getMenu().getIsGenerator())
             {
-                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 55, getTopPos() + 39, 18, 171, 18, 18, 256, 256);
+                matrix.blit(RenderPipelines.GUI_TEXTURED, WIDGETS, getLeftPos() + 55, getTopPos() + 39, 18, 114, 18, 18, 256, 256);
             }
         }
     }
@@ -517,75 +489,171 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
         int button = event.button();
         double actualMouseX = mouseX - (((double) this.width - (double) this.getImageWidth()) / 2);
         double actualMouseY = mouseY - (((double) this.height - (double) this.getImageHeight()) / 2);
-        this.mouseClickedRedstoneButtons(actualMouseX, actualMouseY);
+        this.mouseClickedRedstoneButtons(actualMouseX, actualMouseY, button);
         this.mouseClickedInventoryButtons(button, actualMouseX, actualMouseY);
-        this.mouseClickedAugmentButton(actualMouseX, actualMouseY);
-        this.mouseClickedAutoSplitButton(actualMouseX, actualMouseY);
+        this.mouseClickedAugmentButton(actualMouseX, actualMouseY, button);
+        this.mouseClickedAutoSplitButton(actualMouseX, actualMouseY, button);
         return super.mouseClicked(event, doubleClick);
     }
 
-    public void mouseClickedAutoSplitButton(double mouseX, double mouseY)
+    public void mouseClickedAutoSplitButton(double mouseX, double mouseY, int buttonid)
     {
         if (!this.getMenu().isAutoSplit()) {
-            autoSplitButton.onClick(mouseX, mouseY, getMenu().getPos(), 11, 1, getMenu().getIsFactory());
+            autoSplitButton.onClick(mouseX, mouseY, buttonid, getMenu().getIsFactory(), () -> sendSplitButtonClick(1));
         } else {
-            autoSplitButton.onClick(mouseX, mouseY, getMenu().getPos(), 11, 0, getMenu().getIsFactory());
+            autoSplitButton.onClick(mouseX, mouseY, buttonid, getMenu().getIsFactory(), () -> sendSplitButtonClick(0));
         }
     }
 
-    public void mouseClickedAugmentButton(double mouseX, double mouseY) {
+    public void mouseClickedAugmentButton(double mouseX, double mouseY, int buttonid) {
         if (!this.getMenu().getAugmentGUI()) {
-            augmentButton.onClick(mouseX, mouseY, getMenu().getPos(), 10, 1, true);
+            augmentButton.onClick(mouseX, mouseY, buttonid, true, () -> sendAugmentGUIButtonClick(1));
         } else {
-            augmentButton.onClick(mouseX, mouseY, getMenu().getPos(), 10, 0, true);
+            augmentButton.onClick(mouseX, mouseY, buttonid, true, () -> sendAugmentGUIButtonClick(0));
         }
     }
 
     public void mouseClickedInventoryButtons(int button, double mouseX, double mouseY) {
         if (!showInventoryButtons()) {
-            if (mouseX >= -20 && mouseX <= 0 && mouseY >= 4 && mouseY <= 26) {
+            if (mouseX >= -17 && mouseX <= 1 && mouseY >= -1 && mouseY <= 17) {
                 setShowConfig(1);
             }
         } else {
-            if (mouseX >= -13 && mouseX <= 0 && mouseY >= 4 && mouseY <= 26) {
+            if (mouseX >= -13 && mouseX <= 0 && mouseY >= 5 && mouseY <= 18) {
                 setShowConfig(0);
             }
             if (!getMenu().getAutoInput())
             {
-                autoInputButton.onClick(mouseX, mouseY, getMenu().getPos(), 6, 1, true);
+                autoInputButton.onClick(mouseX, mouseY, button, true, () -> sendAutoIOButtonClick(0, 1));
             }
             else if (getMenu().getAutoInput())
             {
-                autoInputButton.onClick(mouseX, mouseY, getMenu().getPos(), 6, 0, true);
+                autoInputButton.onClick(mouseX, mouseY, button, true, () -> sendAutoIOButtonClick(0, 0));
             }
             if (!getMenu().getAutoOutput())
             {
-                autoOutputButton.onClick(mouseX, mouseY, getMenu().getPos(), 7, 1, true);
+                autoOutputButton.onClick(mouseX, mouseY, button, true, () -> sendAutoIOButtonClick(1, 1));
             }
             else if (getMenu().getAutoOutput())
             {
-                autoOutputButton.onClick(mouseX, mouseY, getMenu().getPos(), 7, 0, true);
+                autoOutputButton.onClick(mouseX, mouseY, button, true, () -> sendAutoIOButtonClick(1, 0));
+
             }
-            clickInvButton(mouseX, mouseY, topButton, button, getMenu().getSettingTop(), Direction.UP.ordinal());
-            clickInvButton(mouseX, mouseY, bottomButton, button, getMenu().getSettingBottom(), Direction.DOWN.ordinal());
-            clickInvButton(mouseX, mouseY, frontButton, button, getMenu().getSettingFront(), getMenu().getIndexFront(), isShiftKeyDown());
-            clickInvButton(mouseX, mouseY, backButton, button, getMenu().getSettingBack(), getMenu().getIndexBack());
-            clickInvButton(mouseX, mouseY, leftButton, button, getMenu().getSettingLeft(), getMenu().getIndexLeft());
-            clickInvButton(mouseX, mouseY, rightButton, button, getMenu().getSettingRight(), getMenu().getIndexRight());
+            clickSideButton(mouseX, mouseY, topButton, button, getMenu().getSettingTop(), Direction.UP);
+            clickSideButton(mouseX, mouseY, bottomButton, button, getMenu().getSettingBottom(), Direction.DOWN);
+            clickSideButton(mouseX, mouseY, frontButton, button, getMenu().getSettingFront(), getMenu().getFrontDirection(), isShiftKeyDown());
+            clickSideButton(mouseX, mouseY, backButton, button, getMenu().getSettingBack(), getMenu().getBackDirection());
+            clickSideButton(mouseX, mouseY, leftButton, button, getMenu().getSettingLeft(), getMenu().getLeftDirection());
+            clickSideButton(mouseX, mouseY, rightButton, button, getMenu().getSettingRight(), getMenu().getRightDirection());
         }
     }
 
-    protected void clickInvButton(double mouseX, double mouseY, FurnaceGuiButton button, int buttonid, int setting, int index)
+
+
+    /**
+     *
+     * @param set 0, 1 are valid
+     */
+    private void sendSplitButtonClick(int set)
     {
-        clickInvButton(mouseX, mouseY, button, buttonid, setting, index, false);
+
+        if (set < 0 || set > 1)
+        {
+            throw new IllegalArgumentException(
+                    "Invalid set value: " + set + " (valid: 0-1)"
+            );
+        }
+
+        int x = getMenu().getPos().getX();
+        int y = getMenu().getPos().getY();
+        int z = getMenu().getPos().getZ();
+        Messages.sendToServer(new PacketSplitFurnaceSetting(x, y, z, set));
     }
 
-    protected void clickInvButton(double mouseX, double mouseY, FurnaceGuiButton button, int buttonid, int setting, int index, boolean shift)
+    /**
+     *
+     * @param set 0, 1 are valid
+     */
+    private void sendAugmentGUIButtonClick(int set)
     {
-        int set = setting == 4 ? 0 : setting + 1;
-        button.onClick(mouseX, mouseY, getMenu().getPos(), index, set, buttonid == GLFW.GLFW_MOUSE_BUTTON_1);
-        set = setting == 0 ? 4 : setting - 1;
-        button.onRightClick(mouseX, mouseY, buttonid, getMenu().getPos(), index, set, true);
+
+        if (set < 0 || set > 1)
+        {
+            throw new IllegalArgumentException(
+                    "Invalid set value: " + set + " (valid: 0-1)"
+            );
+        }
+
+        int x = getMenu().getPos().getX();
+        int y = getMenu().getPos().getY();
+        int z = getMenu().getPos().getZ();
+        Messages.sendToServer(new PacketAugmentGUIFurnaceSetting(x, y, z, set));
+    }
+
+
+    /**
+     * @param index 0, 1 are valid 0 == INPUT, 1 == OUTPUT
+     * @param set 0, 1 are valid 0 == FALSE, 1 == TRUE
+     */
+    private void sendAutoIOButtonClick(int index, int set)
+    {
+
+        if (index < 0 || index > 1)
+        {
+            throw new IllegalArgumentException(
+                    "Invalid index: " + index + " (valid: 0-1)"
+            );
+        }
+
+        if (set < 0 || set > 1)
+        {
+            throw new IllegalArgumentException(
+                    "Invalid set value: " + set + " (valid: 0-1)"
+            );
+        }
+
+        int x = getMenu().getPos().getX();
+        int y = getMenu().getPos().getY();
+        int z = getMenu().getPos().getZ();
+        Messages.sendToServer(new PacketAutoIOFurnaceSetting(x, y, z, index, set));
+    }
+
+    /**
+     *
+     * @param set 0, 1, 2 are valid
+     */
+    private void sendRedstoneButtonClick(int set)
+    {
+
+        if (set < 0 || set > 2)
+        {
+            throw new IllegalArgumentException(
+                    "Invalid set value: " + set + " (valid: 0-2)"
+            );
+        }
+
+        int x = getMenu().getPos().getX();
+        int y = getMenu().getPos().getY();
+        int z = getMenu().getPos().getZ();
+        Messages.sendToServer(new PacketRedstoneFurnaceSetting(x, y, z, set));
+    }
+
+    private void sendSideButtonClick(Direction direction, int set)
+    {
+        int x = getMenu().getPos().getX();
+        int y = getMenu().getPos().getY();
+        int z = getMenu().getPos().getZ();
+        int index = DirectionUtil.getId(direction);
+        Messages.sendToServer(new PacketFurnaceSettings(x, y, z, index, set));
+    }
+
+    protected void clickSideButton(double mouseX, double mouseY, FurnaceGuiButton button, int buttonid, int setting, Direction direction)
+    {
+        clickSideButton(mouseX, mouseY, button, buttonid, setting, direction, false);
+    }
+
+    protected void clickSideButton(double mouseX, double mouseY, FurnaceGuiButton button, int buttonid, int setting, Direction direction, boolean shift)
+    {
 
         if (shift && frontButton.hovering(mouseX, mouseY))
         {
@@ -593,23 +661,25 @@ public abstract class BlockIronFurnaceScreenBase<T extends BlockIronFurnaceConta
             {
                 Messages.sendToServer(new PacketFurnaceSettings(getMenu().getPos().getX(), getMenu().getPos().getY(), getMenu().getPos().getZ(), i, 0));
             }
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 0.6F, 0.3F));
         }
-
-
-
+        else if (buttonid == GLFW.GLFW_MOUSE_BUTTON_1) {
+            int set = setting == FurnaceSettings.FUEL_INPUT ? FurnaceSettings.NONE : setting + 1;
+            button.onClick(mouseX, mouseY, buttonid, true, () -> sendSideButtonClick(direction, set));
+        }
+        else if (buttonid == GLFW.GLFW_MOUSE_BUTTON_2) {
+            int set = setting == FurnaceSettings.NONE ? FurnaceSettings.FUEL_INPUT : setting - 1;
+            button.onRightClick(mouseX, mouseY, buttonid, true, () -> sendSideButtonClick(direction, set));
+        }
 
     }
 
-    public void mouseClickedRedstoneButtons(double mouseX, double mouseY) {
+    public void mouseClickedRedstoneButtons(double mouseX, double mouseY, int buttonid) {
         if (showInventoryButtons()) {
             boolean shift = isShiftKeyDown();
-            addButton.onClick(mouseX, mouseY, getMenu().getPos(), 9, getMenu().getComSub() + 1, !shift && getMenu().getComSub() < 15);
-            subButton.onClick(mouseX, mouseY, getMenu().getPos(), 9, getMenu().getComSub() - 1, shift && getMenu().getComSub() > 0);
-            redstoneIgnoredButton.onClick(mouseX, mouseY, getMenu().getPos(), 8, 0, getMenu().getRedstoneMode() != 0);
-            redstoneLowButton.onClick(mouseX, mouseY, getMenu().getPos(), 8, 2, getMenu().getRedstoneMode() != 2 && shift);
-            redstoneHighButton.onClick(mouseX, mouseY, getMenu().getPos(), 8, 1, getMenu().getRedstoneMode() != 1 && !shift);
-            comparatorButton.onClick(mouseX, mouseY, getMenu().getPos(), 8, 3, getMenu().getRedstoneMode() != 3);
-            comparatorSubButton.onClick(mouseX, mouseY, getMenu().getPos(), 8, 4, getMenu().getRedstoneMode() != 4);
+            redstoneIgnoredButton.onClick(mouseX, mouseY, buttonid, getMenu().getRedstoneMode() != 0, () -> sendRedstoneButtonClick(0));
+            redstoneLowButton.onClick(mouseX, mouseY, buttonid, getMenu().getRedstoneMode() != 1, () -> sendRedstoneButtonClick(1));
+            redstoneHighButton.onClick(mouseX, mouseY, buttonid, getMenu().getRedstoneMode() != 2, () -> sendRedstoneButtonClick(2));
         }
     }
 

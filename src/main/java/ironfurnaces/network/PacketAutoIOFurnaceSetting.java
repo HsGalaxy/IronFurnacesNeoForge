@@ -19,7 +19,6 @@ package ironfurnaces.network;
 
 import ironfurnaces.IronFurnaces;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
-import ironfurnaces.util.DirectionUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -30,22 +29,22 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 
-public record PacketFurnaceSettings(int x, int y, int z, int index, int set) implements CustomPacketPayload {
+public record PacketAutoIOFurnaceSetting(int x, int y, int z, int index, int set) implements CustomPacketPayload {
 
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "furnace_settings_packet");
-    public static final CustomPacketPayload.Type<PacketFurnaceSettings> TYPE = new Type<>(ID);
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "autoio_furnace_setting_packet");
+    public static final Type<PacketAutoIOFurnaceSetting> TYPE = new Type<>(ID);
 
 
 
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFurnaceSettings> CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, PacketFurnaceSettings::x,
-            ByteBufCodecs.INT, PacketFurnaceSettings::y,
-            ByteBufCodecs.INT, PacketFurnaceSettings::z,
-            ByteBufCodecs.INT, PacketFurnaceSettings::index,
-            ByteBufCodecs.INT, PacketFurnaceSettings::set,
-            PacketFurnaceSettings::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketAutoIOFurnaceSetting> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, PacketAutoIOFurnaceSetting::x,
+            ByteBufCodecs.INT, PacketAutoIOFurnaceSetting::y,
+            ByteBufCodecs.INT, PacketAutoIOFurnaceSetting::z,
+            ByteBufCodecs.INT, PacketAutoIOFurnaceSetting::index,
+            ByteBufCodecs.INT, PacketAutoIOFurnaceSetting::set,
+            PacketAutoIOFurnaceSetting::new);
 
 
 
@@ -54,8 +53,8 @@ public record PacketFurnaceSettings(int x, int y, int z, int index, int set) imp
         return TYPE;
     }
 
-    public static PacketFurnaceSettings create(int x, int y, int z, int index, int set) {
-        return new PacketFurnaceSettings(x, y, z, index, set);
+    public static PacketAutoIOFurnaceSetting create(int x, int y, int z, int index, int set) {
+        return new PacketAutoIOFurnaceSetting(x, y, z, index, set);
     }
 
     public void handle(IPayloadContext ctx) {
@@ -65,7 +64,14 @@ public record PacketFurnaceSettings(int x, int y, int z, int index, int set) imp
             BlockPos pos = new BlockPos(x, y, z);
             BlockIronFurnaceTileBase te = (BlockIronFurnaceTileBase) player.level().getBlockEntity(pos);
             if (player.level().isLoaded(pos)) {
-                te.furnaceSettings.setSideSetting(DirectionUtil.fromId(index), set);
+                if (index == 0)
+                {
+                    te.furnaceSettings.setAutoInputSetting(set == 1 ? true : false);
+                }
+                else if (index == 1)
+                {
+                    te.furnaceSettings.setAutoOutputSetting(set == 1 ? true : false);
+                }
                 te.getLevel().markAndNotifyBlock(pos, player.level().getChunkAt(pos), te.getLevel().getBlockState(pos).getBlock().defaultBlockState(), te.getLevel().getBlockState(pos), 2, 0);
                 te.setChanged();
             }

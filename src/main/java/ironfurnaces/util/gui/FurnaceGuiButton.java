@@ -25,6 +25,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
@@ -74,21 +75,23 @@ public class FurnaceGuiButton {
         this.v_enabled = v;
     }
 
-    public void onClick(double mouseX, double mouseY, BlockPos pos, int index, int set, boolean condition) {
-        if (condition) {
-            if (hovering(mouseX, mouseY)) {
-                Messages.sendToServer(new PacketFurnaceSettings(pos.getX(), pos.getY(), pos.getZ(), index, set));
-                Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 0.6F, 0.3F));
+    public void onClick(double mouseX, double mouseY, int button, boolean condition, Runnable action) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
+            if (condition) {
+                if (hovering(mouseX, mouseY)) {
+                    Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 0.6F, 0.3F));
+                    action.run();
+                }
             }
         }
     }
 
-    public void onRightClick(double mouseX, double mouseY, int button, BlockPos pos, int index, int set, boolean condition) {
+    public void onRightClick(double mouseX, double mouseY, int button, boolean condition, Runnable action) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_2) {
             if (condition) {
                 if (hovering(mouseX, mouseY)) {
-                    Messages.sendToServer(new PacketFurnaceSettings(pos.getX(), pos.getY(), pos.getZ(), index, set));
                     Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 0.3F, 0.3F));
+                    action.run();
                 }
             }
         }

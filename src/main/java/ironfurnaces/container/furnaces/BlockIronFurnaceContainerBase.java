@@ -24,6 +24,7 @@ import ironfurnaces.items.augments.ItemAugmentSmoking;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
 import ironfurnaces.util.container.FactoryDataSlot;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
@@ -103,7 +104,7 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
 
             @Override
             public void set(int value) {
-                te.furnaceSettings.set(10, value);
+                te.furnaceSettings.setShowAugmentGUISetting(value == 1 ? true : false);
             }
         });
         addDataSlot(new DataSlot() {
@@ -323,19 +324,16 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         return this.te.getRedstoneSetting();
     }
 
-
-    public int getComSub() {
-        return this.te.getRedstoneComSub();
-    }
-
-
     public boolean getAutoInput() {
-        return this.te.getAutoInput() == 1;
+        return this.te.getAutoInput();
     }
 
+    public boolean getAutoOutput() {
+        return this.te.getAutoOutput();
+    }
 
     public boolean getAugmentGUI() {
-        return this.te.getAugmentGUI() == 1;
+        return this.te.getAugmentGUI();
     }
 
 
@@ -352,12 +350,10 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
         return this.te.isGenerator();
     }
 
-    public boolean getAutoOutput() {
-        return this.te.getAutoOutput() == 1;
-    }
 
-    public Component getTooltip(int index) {
-        switch (te.furnaceSettings.get(index))
+
+    public Component getTooltip(Direction direction) {
+        switch (te.furnaceSettings.getSideSetting(direction))
         {
             case 1:
                 return Component.translatable("tooltip." + IronFurnaces.MOD_ID + ".gui_input");
@@ -409,27 +405,27 @@ public abstract class BlockIronFurnaceContainerBase extends AbstractContainerMen
     }
 
 
-    public int getIndexFront()
+    public Direction getFrontDirection()
     {
-        return this.te.getIndexFront();
+        return this.te.getFrontDirection();
     }
 
 
-    public int getIndexBack()
+    public Direction getBackDirection()
     {
-        return this.te.getIndexBack();
+        return this.te.getBackDirection();
     }
 
 
-    public int getIndexLeft()
+    public Direction getLeftDirection()
     {
-        return this.te.getIndexLeft();
+        return this.te.getLeftDirection();
     }
 
 
-    public int getIndexRight()
+    public Direction getRightDirection()
     {
-        return this.te.getIndexRight();
+        return this.te.getRightDirection();
     }
 
 

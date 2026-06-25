@@ -34,8 +34,14 @@ public class Messages {
         final PayloadRegistrar registrar = event.registrar(IronFurnaces.MOD_ID)
                 .versioned("1.0")
                 .optional();
+
+
+        registrar.playToServer(PacketAugmentGUIFurnaceSetting.TYPE, PacketAugmentGUIFurnaceSetting.CODEC, PacketAugmentGUIFurnaceSetting::handle);
+        registrar.playToServer(PacketAutoIOFurnaceSetting.TYPE, PacketAutoIOFurnaceSetting.CODEC, PacketAutoIOFurnaceSetting::handle);
         registrar.playToServer(PacketFurnaceSettings.TYPE, PacketFurnaceSettings.CODEC, PacketFurnaceSettings::handle);
+        registrar.playToServer(PacketRedstoneFurnaceSetting.TYPE, PacketRedstoneFurnaceSetting.CODEC, PacketRedstoneFurnaceSetting::handle);
         registrar.playToServer(PacketShowConfig.TYPE, PacketShowConfig.CODEC, PacketShowConfig::handle);
+        registrar.playToServer(PacketSplitFurnaceSetting.TYPE, PacketSplitFurnaceSetting.CODEC, PacketSplitFurnaceSetting::handle);
 
     }
 

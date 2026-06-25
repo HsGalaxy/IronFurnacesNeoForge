@@ -1,3 +1,18 @@
+4.4.2
++Removed Auto Split functionality on ATM furnaces aswell as Rainbow Furnace due to how smelting multiple stacks in one smelting cycle interacts with the feature (might revert this)
++Removed Comparator Mode from all furnaces
++Major rework extending from reworked FurnaceSettings, updating from 4.4.1 -> 4.4.2 will not be smooth?
++Altered GUI textures
++Fixed missing localization to item heater.... again
++Blasting recipes now use TAGS instead of vanilla items in their recipes
++Added Prismarine Shard as a TAG of dusts/prismarine
++Documented FurnaceSettings
++Seperated Furnace Networking packet senders
++Rethinking life choices after reading comments of the auto split functions
++Removed alot of hardcoded index numbers relating to FurnaceSettings or Furnace Item Slots
++GUI button clicks now properly handle left clicks and right clicks
++Moved Thermal Expansion Energy bars into separate GUI file to fix a rare bug sometimes making the GUI display full energy bars in wrong location
++Touched up more GUI textures
 4.4.1
 +Readded Ender particles to Crystal Furnace
 +Fixed missing localization to block heater

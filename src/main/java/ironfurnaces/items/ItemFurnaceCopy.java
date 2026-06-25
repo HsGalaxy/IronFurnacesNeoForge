@@ -19,6 +19,7 @@ package ironfurnaces.items;
 import ironfurnaces.init.Registration;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
 import ironfurnaces.util.DirectionUtil;
+import ironfurnaces.util.FurnaceSettings;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -94,13 +95,8 @@ public class ItemFurnaceCopy extends Item {
             if (customData != null) {
                 CompoundTag tag = customData.copyTag();
                 if (!tag.isEmpty()) {
-                    int[] settings = tag.getIntArray("settings").orElse(null);
-                    if (settings == null) {
-                        return super.useOn(ctx);
-                    }
-                    for (int i = 0; i < settings.length; i++) {
-                        ((BlockIronFurnaceTileBase) te).furnaceSettings.set(i, settings[i]);
-                    }
+                    FurnaceSettings newSettings = new FurnaceSettings().readFromTag(tag);
+                    ((BlockIronFurnaceTileBase) te).furnaceSettings = newSettings;
                     Direction dir = DirectionUtil.fromId(tag.getInt("direction").orElse(0));
                     if (dir != Direction.UP && dir != Direction.DOWN)
                     {

@@ -1,1 +1,5 @@
-{"type":"ironfurnaces:generator_blasting","energy":750000,"ingredient":"minecraft:netherite_ingot"}
+{
+  "type": "ironfurnaces:generator_blasting",
+  "energy": 750000,
+  "ingredient": "#c:ingots/netherite"
+}

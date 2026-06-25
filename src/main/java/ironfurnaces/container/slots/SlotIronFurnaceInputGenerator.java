@@ -79,6 +79,6 @@ public class SlotIronFurnaceInputGenerator extends Slot {
 
     @Override
     public boolean isActive() {
-        return te.isGenerator() && te.getAugmentGUI() == 0;
+        return te.isGenerator() && !te.getAugmentGUI();
     }
 }

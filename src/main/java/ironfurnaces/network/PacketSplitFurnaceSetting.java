@@ -19,7 +19,6 @@ package ironfurnaces.network;
 
 import ironfurnaces.IronFurnaces;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
-import ironfurnaces.util.DirectionUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -30,22 +29,21 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 
-public record PacketFurnaceSettings(int x, int y, int z, int index, int set) implements CustomPacketPayload {
+public record PacketSplitFurnaceSetting(int x, int y, int z, int set) implements CustomPacketPayload {
 
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "furnace_settings_packet");
-    public static final CustomPacketPayload.Type<PacketFurnaceSettings> TYPE = new Type<>(ID);
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "split_furnace_setting_packet");
+    public static final Type<PacketSplitFurnaceSetting> TYPE = new Type<>(ID);
 
 
 
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PacketFurnaceSettings> CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, PacketFurnaceSettings::x,
-            ByteBufCodecs.INT, PacketFurnaceSettings::y,
-            ByteBufCodecs.INT, PacketFurnaceSettings::z,
-            ByteBufCodecs.INT, PacketFurnaceSettings::index,
-            ByteBufCodecs.INT, PacketFurnaceSettings::set,
-            PacketFurnaceSettings::new);
+    public static final StreamCodec<RegistryFriendlyByteBuf, PacketSplitFurnaceSetting> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, PacketSplitFurnaceSetting::x,
+            ByteBufCodecs.INT, PacketSplitFurnaceSetting::y,
+            ByteBufCodecs.INT, PacketSplitFurnaceSetting::z,
+            ByteBufCodecs.INT, PacketSplitFurnaceSetting::set,
+            PacketSplitFurnaceSetting::new);
 
 
 
@@ -54,8 +52,8 @@ public record PacketFurnaceSettings(int x, int y, int z, int index, int set) imp
         return TYPE;
     }
 
-    public static PacketFurnaceSettings create(int x, int y, int z, int index, int set) {
-        return new PacketFurnaceSettings(x, y, z, index, set);
+    public static PacketSplitFurnaceSetting create(int x, int y, int z, int set) {
+        return new PacketSplitFurnaceSetting(x, y, z, set);
     }
 
     public void handle(IPayloadContext ctx) {
@@ -65,7 +63,7 @@ public record PacketFurnaceSettings(int x, int y, int z, int index, int set) imp
             BlockPos pos = new BlockPos(x, y, z);
             BlockIronFurnaceTileBase te = (BlockIronFurnaceTileBase) player.level().getBlockEntity(pos);
             if (player.level().isLoaded(pos)) {
-                te.furnaceSettings.setSideSetting(DirectionUtil.fromId(index), set);
+                te.furnaceSettings.setAutoSplitSetting(set == 1 ? true : false);
                 te.getLevel().markAndNotifyBlock(pos, player.level().getChunkAt(pos), te.getLevel().getBlockState(pos).getBlock().defaultBlockState(), te.getLevel().getBlockState(pos), 2, 0);
                 te.setChanged();
             }

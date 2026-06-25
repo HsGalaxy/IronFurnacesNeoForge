@@ -1,1 +1,5 @@
-{"type":"ironfurnaces:generator_blasting","energy":40000,"ingredient":"minecraft:prismarine_shard"}
+{
+  "type": "ironfurnaces:generator_blasting",
+  "energy": 40000,
+  "ingredient": "#c:dusts/prismarine"
+}

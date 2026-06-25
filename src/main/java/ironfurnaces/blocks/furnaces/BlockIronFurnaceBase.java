@@ -27,6 +27,7 @@ import ironfurnaces.items.augments.ItemAugmentRed;
 import ironfurnaces.tileentity.furnaces.BlockIronFurnaceTileBase;
 import ironfurnaces.tileentity.furnaces.BlockMillionFurnaceTile;
 import ironfurnaces.util.DirectionUtil;
+import ironfurnaces.util.FurnaceSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -57,6 +58,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import javax.annotation.Nullable;
@@ -142,13 +144,9 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
             return InteractionResult.SUCCESS;
         }
 
-        int[] settings = new int[((BlockIronFurnaceTileBase) te).furnaceSettings.size()];
-        for (int i = 0; i < ((BlockIronFurnaceTileBase) te).furnaceSettings.size(); i++)
-        {
-            settings[i] = ((BlockIronFurnaceTileBase) te).furnaceSettings.get(i);
-        }
+        FurnaceSettings furnaceSettings = ((BlockIronFurnaceTileBase) te).furnaceSettings.createCopy();
         CompoundTag newTag = new CompoundTag();
-        newTag.putIntArray("settings", settings);
+        furnaceSettings.writeToTag(newTag);
         newTag.putInt("direction", DirectionUtil.getId(te.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING)));
         stack.set(ironfurnaces.init.Registration.FURNACE_SETTINGS.get(), CustomData.of(newTag));
 
@@ -203,7 +201,7 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
             serverPlayer.openMenu((MenuProvider) be, buf -> buf.writeBlockPos(pos));
             if (be instanceof BlockIronFurnaceTileBase)
             {
-                ((BlockIronFurnaceTileBase) be).furnaceSettings.set(10, 0);
+                ((BlockIronFurnaceTileBase) be).furnaceSettings.setShowAugmentGUISetting(false);
             }
         }
 
@@ -366,57 +364,6 @@ public abstract class BlockIronFurnaceBase extends Block implements EntityBlock 
 
     public BlockState mirror(BlockState p_185471_1_, Mirror p_185471_2_) {
         return p_185471_1_.rotate(p_185471_2_.getRotation((Direction)p_185471_1_.getValue(BlockStateProperties.HORIZONTAL_FACING)));
-    }
-
-    private int calculateOutput(Level worldIn, BlockPos pos, BlockState state) {
-        BlockIronFurnaceTileBase tile = ((BlockIronFurnaceTileBase)worldIn.getBlockEntity(pos));
-        int i = this.getComparatorInputOverride(state, worldIn, pos);
-        if (tile != null)
-        {
-            int j = tile.furnaceSettings.get(9);
-            return tile.furnaceSettings.get(8) == 4 ? Math.max(i - j, 0) : i;
-        }
-        return 0;
-    }
-
-    @Override
-    public boolean isSignalSource(BlockState p_149744_1_) {
-        return true;
-    }
-
-
-    @Override
-    public int getSignal(BlockState p_180656_1_, BlockGetter p_180656_2_, BlockPos p_180656_3_, Direction p_180656_4_) {
-        return getDirectSignal(p_180656_1_, p_180656_2_, p_180656_3_, p_180656_4_);
-    }
-
-    @Override
-    public int getDirectSignal(BlockState blockState, BlockGetter world, BlockPos pos, Direction direction) {
-        if (world.getBlockEntity(pos) instanceof BlockIronFurnaceTileBase)
-        {
-            BlockIronFurnaceTileBase furnace = ((BlockIronFurnaceTileBase) world.getBlockEntity(pos));
-            if (furnace != null)
-            {
-                int mode = furnace.furnaceSettings.get(8);
-                if (mode == 0)
-                {
-                    return 0;
-                }
-                else if (mode == 1)
-                {
-                    return 0;
-                }
-                else if (mode == 2)
-                {
-                    return 0;
-                }
-                else
-                {
-                    return calculateOutput(furnace.getLevel(), pos, blockState);
-                }
-            }
-        }
-        return 0;
     }
 
     @Override

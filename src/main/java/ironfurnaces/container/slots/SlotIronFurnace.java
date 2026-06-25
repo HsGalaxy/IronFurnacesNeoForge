@@ -36,7 +36,7 @@ public class SlotIronFurnace extends Slot {
 
     @Override
     public boolean isActive() {
-        return te.getAugmentGUI() == 0 && te.isFurnace();
+        return !te.getAugmentGUI() && te.isFurnace();
     }
 
     /**

@@ -43,19 +43,19 @@ public class SlotIronFurnaceOutputFactory extends Slot {
         {
             if (te.getTier() > 1)
             {
-                return te.isFactory() && te.getAugmentGUI() == 0;
+                return te.isFactory() && !te.getAugmentGUI();
             }
         }
         else if (index == 1 || index == 4)
         {
             if (te.getTier() > 0)
             {
-                return te.isFactory() && te.getAugmentGUI() == 0;
+                return te.isFactory() && !te.getAugmentGUI();
             }
         }
         else
         {
-            return te.isFactory() && te.getAugmentGUI() == 0;
+            return te.isFactory() && !te.getAugmentGUI();
         }
         return false;
     }

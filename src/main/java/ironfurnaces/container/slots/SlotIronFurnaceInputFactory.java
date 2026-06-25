@@ -44,7 +44,7 @@ public class SlotIronFurnaceInputFactory extends Slot {
         {
             if (te.getTier() > 1)
             {
-                return te.isFactory() && te.getAugmentGUI() == 0;
+                return te.isFactory() && !te.getAugmentGUI();
             }
             else
             {
@@ -55,7 +55,7 @@ public class SlotIronFurnaceInputFactory extends Slot {
         {
             if (te.getTier() > 0)
             {
-                return te.isFactory() && te.getAugmentGUI() == 0;
+                return te.isFactory() && !te.getAugmentGUI();
             }
             else
             {
@@ -64,7 +64,7 @@ public class SlotIronFurnaceInputFactory extends Slot {
         }
         else
         {
-            return te.isFactory() && te.getAugmentGUI() == 0;
+            return te.isFactory() && !te.getAugmentGUI();
         }
     }
 }

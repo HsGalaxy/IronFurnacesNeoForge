@@ -1,1 +1,5 @@
-{"type":"ironfurnaces:generator_blasting","energy":10000,"ingredient":"minecraft:redstone"}
+{
+  "type": "ironfurnaces:generator_blasting",
+  "energy": 10000,
+  "ingredient": "#c:dusts/redstone"
+}

@@ -16,6 +16,7 @@
 
 package ironfurnaces.util.gui;
 
+import ironfurnaces.IronFurnaces;
 import ironfurnaces.util.StringHelper;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -24,6 +25,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 public class FurnaceGuiEnergy {
+
+    public static final Identifier GUI_ENERGY = Identifier.fromNamespaceAndPath(IronFurnaces.MOD_ID, "textures/gui/energy.png");
 
     private int left;
     private int top;
@@ -60,8 +63,8 @@ public class FurnaceGuiEnergy {
     }
 
 
-    public void render(Identifier location, GuiGraphicsExtractor matrix, int scaled) {
-        matrix.blit(RenderPipelines.GUI_TEXTURED, location, left + x, top + y + 42 - scaled, u, v + height - scaled, width, scaled, 256, 256);
+    public void render(GuiGraphicsExtractor matrix, int scaled) {
+        matrix.blit(RenderPipelines.GUI_TEXTURED, GUI_ENERGY, left + x, top + y + 42 - scaled, u, v + height - scaled, width, scaled, 256, 256);
     }
 
     public boolean hovering(double mouseX, double mouseY) {

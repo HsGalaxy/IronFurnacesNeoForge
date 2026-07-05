@@ -120,6 +120,12 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     public UUID owner;
 
     public boolean rainbowGenerating;
+    private final List<BlockPos> rainbowLinkedFurnaces = new ArrayList<>();
+    private long lastRainbowLocalScan = Long.MIN_VALUE;
+
+    private static final int RAINBOW_LOCAL_SCAN_RADIUS = 16;
+    private static final int RAINBOW_LOCAL_SCAN_INTERVAL = 100;
+    private static final int RAINBOW_LINK_CACHE_LIMIT = 512;
 
     public final Object2IntOpenHashMap<ResourceKey<Recipe<?>>> recipes = new Object2IntOpenHashMap<>();
     public RecipeType<? extends AbstractCookingRecipe> recipeType;
@@ -672,23 +678,168 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
     }
 
 
-    boolean rainbowCheckFurnaceTiers(List<BlockIronFurnaceTileBase> list)
-    {
-        if (list.isEmpty())
-        {
+    private static boolean isRainbowSupportGenerator(BlockIronFurnaceTileBase furnace) {
+        return furnace != null && furnace.isGenerator() && furnace.generatorBurn > 0 && furnace.getEnergy() < furnace.getCapacity();
+    }
+
+    private static boolean rainbowCheckFurnaceTiers(List<BlockIronFurnaceTileBase> list) {
+        if (list.isEmpty()) {
             return false;
         }
-        int check = 0;
         for (BlockIronFurnaceTileBase furnace : list) {
-            if (furnace.generatorBurn > 0 && furnace.getEnergy() < furnace.getCapacity()) {
-                check++;
+            if (isRainbowSupportGenerator(furnace)) {
+                return true;
             }
         }
-        if (check == 0)
-        {
+        return false;
+    }
+
+    private static void setRainbowGeneratingState(Level level, BlockPos worldPosition, BlockIronFurnaceTileBase furnace, boolean generating) {
+        furnace.rainbowGenerating = generating;
+        BlockState state = level.getBlockState(worldPosition);
+        if (state.hasProperty(BlockMillionFurnace.RAINBOW_GENERATING)
+                && state.getValue(BlockMillionFurnace.RAINBOW_GENERATING) != generating) {
+            level.setBlock(worldPosition, state.setValue(BlockMillionFurnace.RAINBOW_GENERATING, generating), 3);
+        }
+    }
+
+    private static void addRainbowCandidate(LinkedHashSet<BlockPos> candidates, BlockPos pos) {
+        if (pos != null && candidates.size() < RAINBOW_LINK_CACHE_LIMIT) {
+            candidates.add(pos.immutable());
+        }
+    }
+
+    private static void addRainbowCandidatesFromCache(BlockIronFurnaceTileBase furnace, LinkedHashSet<BlockPos> candidates) {
+        for (BlockPos pos : furnace.rainbowLinkedFurnaces) {
+            addRainbowCandidate(candidates, pos);
+        }
+    }
+
+    private static void addRainbowCandidatesFromOwner(Level level, BlockMillionFurnaceTile furnaceTile, LinkedHashSet<BlockPos> candidates) {
+        if (furnaceTile.owner == null) {
+            return;
+        }
+        if (level.getPlayerByUUID(furnaceTile.owner) != null) {
+            List<BlockPos> furnacesBlockPos = level.getPlayerByUUID(furnaceTile.owner).getData(ironfurnaces.init.Registration.PLAYER_FURNACES_LIST.get()).furnacesList.get();
+            for (BlockPos pos : furnacesBlockPos) {
+                addRainbowCandidate(candidates, pos);
+            }
+        }
+    }
+
+    private static void addRainbowCandidatesFromLocalScan(Level level, BlockPos center, BlockIronFurnaceTileBase furnace, LinkedHashSet<BlockPos> candidates) {
+        long gameTime = level.getGameTime();
+        if (!furnace.rainbowLinkedFurnaces.isEmpty() && gameTime - furnace.lastRainbowLocalScan < RAINBOW_LOCAL_SCAN_INTERVAL) {
+            return;
+        }
+        furnace.lastRainbowLocalScan = gameTime;
+
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        int r = RAINBOW_LOCAL_SCAN_RADIUS;
+        for (int x = center.getX() - r; x <= center.getX() + r; x++) {
+            for (int y = center.getY() - r; y <= center.getY() + r; y++) {
+                for (int z = center.getZ() - r; z <= center.getZ() + r; z++) {
+                    mutable.set(x, y, z);
+                    if (!level.hasChunkAt(mutable)) {
+                        continue;
+                    }
+                    BlockEntity be = level.getBlockEntity(mutable);
+                    if (be instanceof BlockIronFurnaceTileBase) {
+                        addRainbowCandidate(candidates, mutable.immutable());
+                    }
+                }
+            }
+        }
+    }
+
+    private void refreshRainbowLinkCache(Collection<BlockPos> candidates) {
+        rainbowLinkedFurnaces.clear();
+        for (BlockPos pos : candidates) {
+            if (rainbowLinkedFurnaces.size() >= RAINBOW_LINK_CACHE_LIMIT) {
+                break;
+            }
+            rainbowLinkedFurnaces.add(pos.immutable());
+        }
+        setChanged();
+    }
+
+    private static boolean evaluateRainbowGenerator(Level level, BlockPos worldPosition, BlockIronFurnaceTileBase e) {
+        if (!(e instanceof BlockMillionFurnaceTile furnaceTile)) {
             return false;
         }
-        return true;
+
+        LinkedHashSet<BlockPos> candidates = new LinkedHashSet<>();
+        addRainbowCandidatesFromCache(e, candidates);
+        addRainbowCandidatesFromOwner(level, furnaceTile, candidates);
+        addRainbowCandidatesFromLocalScan(level, worldPosition, e, candidates);
+        addRainbowCandidate(candidates, worldPosition);
+
+        List<BlockIronFurnaceTileBase> iron = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> gold = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> diamond = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> emerald = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> obsidian = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> crystal = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> netherite = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> copper = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> silver = new ArrayList<>();
+        List<BlockIronFurnaceTileBase> rainbow = new ArrayList<>();
+        LinkedHashSet<BlockPos> validCandidates = new LinkedHashSet<>();
+
+        for (BlockPos pos : candidates) {
+            if (!level.hasChunkAt(pos)) {
+                validCandidates.add(pos);
+                continue;
+            }
+            BlockEntity be = level.getBlockEntity(pos);
+            if (!(be instanceof BlockIronFurnaceTileBase te)) {
+                continue;
+            }
+
+            validCandidates.add(pos.immutable());
+            if (te instanceof BlockIronFurnaceTile) {
+                iron.add(te);
+            } else if (te instanceof BlockGoldFurnaceTile) {
+                gold.add(te);
+            } else if (te instanceof BlockDiamondFurnaceTile) {
+                diamond.add(te);
+            } else if (te instanceof BlockEmeraldFurnaceTile) {
+                emerald.add(te);
+            } else if (te instanceof BlockObsidianFurnaceTile) {
+                obsidian.add(te);
+            } else if (te instanceof BlockCrystalFurnaceTile) {
+                crystal.add(te);
+            } else if (te instanceof BlockNetheriteFurnaceTile) {
+                netherite.add(te);
+            } else if (te instanceof BlockCopperFurnaceTile) {
+                copper.add(te);
+            } else if (te instanceof BlockSilverFurnaceTile) {
+                silver.add(te);
+            } else if (te instanceof BlockMillionFurnaceTile) {
+                rainbow.add(te);
+            }
+        }
+
+        e.refreshRainbowLinkCache(validCandidates);
+
+        int rainbowGenerators = 0;
+        for (BlockIronFurnaceTileBase rainbowFurnace : rainbow) {
+            if (rainbowFurnace.isGenerator()) {
+                rainbowGenerators++;
+            }
+        }
+
+        return furnaceTile.owner != null
+                && rainbowGenerators == 1
+                && rainbowCheckFurnaceTiers(iron)
+                && rainbowCheckFurnaceTiers(gold)
+                && rainbowCheckFurnaceTiers(diamond)
+                && rainbowCheckFurnaceTiers(emerald)
+                && rainbowCheckFurnaceTiers(obsidian)
+                && rainbowCheckFurnaceTiers(crystal)
+                && rainbowCheckFurnaceTiers(netherite)
+                && rainbowCheckFurnaceTiers(copper)
+                && rainbowCheckFurnaceTiers(silver);
     }
 
     public static void tick(Level level, BlockPos worldPosition, BlockState blockState, BlockIronFurnaceTileBase e) {
@@ -698,134 +849,11 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
             e.furnaceSettings = new FurnaceSettings();
         }
 
-        if (!e.level.isClientSide()) {
-            if (e.isGenerator())
-            {
-
-
-                boolean flag3 = false;
-                List<BlockIronFurnaceTileBase> iron = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> gold = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> diamond = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> emerald = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> obsidian = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> crystal = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> netherite = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> copper = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> silver = new ArrayList<>();
-                List<BlockIronFurnaceTileBase> rainbow = new ArrayList<>();
-
-                if (e instanceof BlockMillionFurnaceTile) {
-                    BlockMillionFurnaceTile furnaceTile = (BlockMillionFurnaceTile) e;
-                    if (furnaceTile.owner != null)
-                    {
-                        flag3 = true;
-                        if (level.getPlayerByUUID(furnaceTile.owner) != null)
-                        {
-
-                            List<BlockPos> furnacesBlockPos = level.getPlayerByUUID(furnaceTile.owner).getData(ironfurnaces.init.Registration.PLAYER_FURNACES_LIST.get()).furnacesList.get();
-                            if (!furnacesBlockPos.isEmpty())
-                            {
-
-                                for (int i = 0; i < furnacesBlockPos.size(); i++)
-                                {
-                                    level.getChunkAt(furnacesBlockPos.get(i)).setLoaded(true);
-                                    BlockEntity be = level.getBlockEntity(furnacesBlockPos.get(i));
-                                    if (be != null)
-                                    {
-                                        if (be instanceof BlockIronFurnaceTileBase)
-                                        {
-                                            BlockIronFurnaceTileBase te = (BlockIronFurnaceTileBase)be;
-                                            if (te instanceof BlockIronFurnaceTile)
-                                            {
-                                                iron.add((BlockIronFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockGoldFurnaceTile)
-                                            {
-                                                gold.add((BlockGoldFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockDiamondFurnaceTile)
-                                            {
-                                                diamond.add((BlockDiamondFurnaceTile) te);
-                                            }
-
-                                            if (te instanceof BlockEmeraldFurnaceTile)
-                                            {
-                                                emerald.add((BlockEmeraldFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockObsidianFurnaceTile)
-                                            {
-                                                obsidian.add((BlockObsidianFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockCrystalFurnaceTile)
-                                            {
-                                                crystal.add((BlockCrystalFurnaceTile) te);
-                                            }
-
-                                            if (te instanceof BlockNetheriteFurnaceTile)
-                                            {
-                                                netherite.add((BlockNetheriteFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockCopperFurnaceTile)
-                                            {
-                                                copper.add((BlockCopperFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockSilverFurnaceTile)
-                                            {
-                                                silver.add((BlockSilverFurnaceTile) te);
-                                            }
-                                            if (te instanceof BlockMillionFurnaceTile)
-                                            {
-                                                rainbow.add((BlockMillionFurnaceTile) te);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (rainbow.size() > 1)
-                    {
-                        int rainbowGens = 0;
-                        for (int i = 0; i < rainbow.size(); i++)
-                        {
-                            if (rainbow.get(i).isGenerator())
-                            {
-                                rainbowGens++;
-                            }
-                        }
-                        if (rainbowGens > 1)
-                        {
-                            flag3 = false;
-                        }
-                    }
-                    if (flag3
-                            && e.rainbowCheckFurnaceTiers(iron)
-                            && e.rainbowCheckFurnaceTiers(gold)
-                            && e.rainbowCheckFurnaceTiers(diamond)
-                            && e.rainbowCheckFurnaceTiers(emerald)
-                            && e.rainbowCheckFurnaceTiers(obsidian)
-                            && e.rainbowCheckFurnaceTiers(crystal)
-                            && e.rainbowCheckFurnaceTiers(netherite)
-                            && e.rainbowCheckFurnaceTiers(copper)
-                            && e.rainbowCheckFurnaceTiers(silver)
-                    ) {
-                        e.rainbowGenerating = flag3;
-                        BlockState state = level.getBlockState(worldPosition);
-                        if (state.getValue(BlockMillionFurnace.RAINBOW_GENERATING) != e.rainbowGenerating) {
-                            level.setBlock(worldPosition, state.setValue(BlockMillionFurnace.RAINBOW_GENERATING, e.rainbowGenerating), 3);
-                        }
-                        e.rainbowEnergyOut();
-                    }
-                    else
-                    {
-                        e.rainbowGenerating = false;
-                        BlockState state = level.getBlockState(worldPosition);
-                        if (state.getValue(BlockMillionFurnace.RAINBOW_GENERATING) != e.rainbowGenerating) {
-                            level.setBlock(worldPosition, state.setValue(BlockMillionFurnace.RAINBOW_GENERATING, e.rainbowGenerating), 3);
-                        }
-                    }
-                }
+        if (!e.level.isClientSide() && e.isGenerator() && e instanceof BlockMillionFurnaceTile) {
+            boolean shouldGenerateRainbow = evaluateRainbowGenerator(level, worldPosition, e);
+            setRainbowGeneratingState(level, worldPosition, e, shouldGenerateRainbow);
+            if (shouldGenerateRainbow) {
+                e.rainbowEnergyOut();
             }
         }
 
@@ -1922,6 +1950,15 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         generatorBurn = input.getDoubleOr("GeneratorBurn", generatorBurn);
         generatorRecentRecipeRF = input.getIntOr("GeneratorRecent", generatorRecentRecipeRF);
         gottenRF = input.getDoubleOr("GottenRF", gottenRF);
+        rainbowGenerating = input.getBooleanOr("RainbowGen", rainbowGenerating);
+        int[] rainbowLinkedX = input.getIntArray("RainbowLinkedX").orElse(new int[0]);
+        int[] rainbowLinkedY = input.getIntArray("RainbowLinkedY").orElse(new int[0]);
+        int[] rainbowLinkedZ = input.getIntArray("RainbowLinkedZ").orElse(new int[0]);
+        rainbowLinkedFurnaces.clear();
+        int rainbowLinkedSize = Math.min(rainbowLinkedX.length, Math.min(rainbowLinkedY.length, rainbowLinkedZ.length));
+        for (int i = 0; i < rainbowLinkedSize && i < RAINBOW_LINK_CACHE_LIMIT; i++) {
+            rainbowLinkedFurnaces.add(new BlockPos(rainbowLinkedX[i], rainbowLinkedY[i], rainbowLinkedZ[i]));
+        }
 
         furnaceBurnTime = input.getIntOr("BurnTime", furnaceBurnTime);
         cookTime = input.getIntOr("CookTime", cookTime);
@@ -1947,6 +1984,18 @@ public abstract class BlockIronFurnaceTileBase extends TileEntityInventory imple
         super.saveAdditional(output);
         output.storeNullable("Owner", UUIDUtil.CODEC, owner);
         output.putBoolean("RainbowGen", rainbowGenerating);
+        int[] rainbowLinkedX = new int[rainbowLinkedFurnaces.size()];
+        int[] rainbowLinkedY = new int[rainbowLinkedFurnaces.size()];
+        int[] rainbowLinkedZ = new int[rainbowLinkedFurnaces.size()];
+        for (int i = 0; i < rainbowLinkedFurnaces.size(); i++) {
+            BlockPos pos = rainbowLinkedFurnaces.get(i);
+            rainbowLinkedX[i] = pos.getX();
+            rainbowLinkedY[i] = pos.getY();
+            rainbowLinkedZ[i] = pos.getZ();
+        }
+        output.putIntArray("RainbowLinkedX", rainbowLinkedX);
+        output.putIntArray("RainbowLinkedY", rainbowLinkedY);
+        output.putIntArray("RainbowLinkedZ", rainbowLinkedZ);
         output.putIntArray("FactoryCookTime", factoryCookTime);
         output.putIntArray("FactoryTotalCookTime", factoryTotalCookTime);
         for (int i = 0; i < usedRF.length; i++) {
